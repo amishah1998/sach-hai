@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#7a2e0e">
+<title>सच है? · Sach Hai?</title>
+<meta name="description" content="Free, simple checker for WhatsApp forwards in 9 Indian languages. Paste a message or upload a screenshot.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%94%8D%3C/text%3E%3C/svg%3E">
+<style>
+/* ======================================================================
+   सच है? / Sach Hai? — single file, no backend, no tracking.
+   ====================================================================== */
+:root{
+  --bg:#fffaf2; --ink:#1a1a1a; --muted:#3d3d3d; --brand:#7a2e0e; --brand2:#b5470f;
+  --card:#ffffff; --line:#2b2b2b;
+  --fake:#b00020; --fakebg:#ffe8ea; --real:#0b6b2b; --realbg:#e3f6e8; --unsure:#7a5200; --unsurebg:#fff4d6;
+}
+*{box-sizing:border-box}
+html{font-size:20px}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans","Noto Sans Devanagari","Noto Sans Gurmukhi","Noto Sans Bengali","Noto Sans Tamil","Noto Sans Telugu","Noto Sans Gujarati","Noto Sans Kannada","Nirmala UI","Mangal","Vrinda","Latha","Gautami","Shruti","Tunga","Raavi","Kohinoor Devanagari","Tamil Sangam MN",sans-serif;
+  font-size:1.1rem;line-height:1.5}
+main{max-width:640px;margin:0 auto;padding:16px 16px 48px}
+header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+h1{font-size:2rem;margin:0;color:var(--brand);line-height:1.1}
+h1 small{display:block;font-size:1rem;color:var(--muted);font-weight:600}
+.tagline{font-size:1.15rem;margin:6px 0 16px;color:var(--muted)}
+button,.btn{font:inherit;font-size:1.15rem;font-weight:700;border-radius:14px;cursor:pointer;
+  min-height:60px;padding:12px 18px;border:3px solid var(--line);background:#fff;color:var(--ink);
+  display:flex;align-items:center;justify-content:center;gap:10px;width:100%;text-align:center}
+button:focus-visible,textarea:focus-visible,input:focus-visible,.btn:focus-within{outline:4px solid #1f5fd6;outline-offset:3px}
+.lang{width:auto;min-height:52px;font-size:1.05rem;padding:8px 14px;background:var(--brand);color:#fff;border-color:var(--brand)}
+label.big{display:block;font-weight:800;font-size:1.2rem;margin:10px 0 6px}
+textarea{width:100%;min-height:180px;font:inherit;font-size:1.2rem;padding:14px;border:3px solid var(--line);
+  border-radius:14px;background:#fff;color:var(--ink);resize:vertical}
+.row{display:grid;gap:12px;margin-top:12px}
+.upload{background:#fff;border-style:dashed}
+.upload input{position:absolute;width:1px;height:1px;opacity:0}
+.check{background:var(--brand);border-color:var(--brand);color:#fff;font-size:1.4rem;min-height:72px}
+.check:disabled{opacity:.6}
+.ghost{background:transparent;border-width:2px;min-height:54px;font-size:1.05rem}
+#preview{max-width:100%;max-height:220px;border-radius:12px;border:2px solid #ccc;display:none;margin-top:10px}
+.progress{margin-top:12px;display:none}
+.bar{height:20px;border:2px solid var(--line);border-radius:10px;overflow:hidden;background:#fff}
+.bar>div{height:100%;width:0;background:var(--brand2);transition:width .2s}
+.status{font-size:1.05rem;margin-top:6px;color:var(--muted)}
+#result{margin-top:20px;display:none;border:4px solid;border-radius:18px;padding:18px;background:var(--card)}
+#result.fake{border-color:var(--fake);background:var(--fakebg)}
+#result.real{border-color:var(--real);background:var(--realbg)}
+#result.unsure{border-color:var(--unsure);background:var(--unsurebg)}
+.verdict{display:flex;align-items:center;gap:14px;font-size:1.9rem;font-weight:900;line-height:1.2}
+.verdict .icon{font-size:3.4rem;line-height:1}
+.fake .verdict{color:var(--fake)} .real .verdict{color:var(--real)} .unsure .verdict{color:var(--unsure)}
+.reasons{margin:12px 0 4px;padding-left:1.2em;font-size:1.15rem}
+.reasons li{margin:6px 0}
+.sources{margin:10px 0;font-size:1.05rem}
+.sources a{color:#0b3fa8;font-weight:700;word-break:break-word}
+.tiplines{background:#fff;border:2px solid var(--unsure);border-radius:12px;padding:10px 14px;margin:12px 0}
+.tiplines h3{margin:0 0 6px;font-size:1.15rem}
+.tiplines ul{margin:0;padding-left:1.1em}
+.tiplines a{color:#0b3fa8;font-weight:700;white-space:nowrap}
+.actions{display:grid;gap:12px;margin-top:14px}
+.wa{background:#128c3e;border-color:#0d6b2f;color:#fff}
+.speak{background:#fff}
+.disclaimer{margin-top:28px;font-size:1rem;color:var(--muted);border-top:2px solid #ddd;padding-top:12px}
+/* settings drawer */
+#drawer{position:fixed;inset:auto 0 0 0;background:#fff;border-top:4px solid var(--brand);border-radius:20px 20px 0 0;
+  padding:18px 16px 24px;max-height:85vh;overflow:auto;transform:translateY(110%);transition:transform .25s,visibility .25s;visibility:hidden;z-index:10;
+  box-shadow:0 -8px 30px rgba(0,0,0,.25)}
+#drawer.open{transform:none;visibility:visible}
+#drawer .inner{max-width:640px;margin:0 auto}
+#drawer h2{margin:0 0 8px;font-size:1.4rem}
+#drawer input{width:100%;font:inherit;font-size:1.05rem;padding:12px;border:3px solid var(--line);border-radius:12px}
+#drawer p{font-size:1rem}
+#shade{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;z-index:9}
+#shade.open{display:block}
+.small{font-size:1rem}
+.sr{position:absolute;left:-9999px}
+#result.none{border-color:#3d4f7a;background:#eaf0fb}
+.none .verdict{color:#2b3d66}
+.langgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0}
+.langgrid button{min-height:64px;font-size:1.3rem}
+.langgrid button.on{background:var(--brand);color:#fff;border-color:var(--brand)}
+#langModal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;z-index:20;align-items:flex-end;justify-content:center}
+#langModal.open{display:flex}
+#langModal .box{background:#fff;border-radius:20px 20px 0 0;padding:18px 16px 24px;width:100%;max-width:640px;max-height:90vh;overflow:auto}
+#langModal h2{margin:0 0 6px;font-size:1.4rem}
+.checkstatus{font-size:1.05rem;color:var(--muted);min-height:1.4em;text-align:center}
+.sources a{display:block;margin:6px 0}
+.note{font-size:1rem;color:var(--muted);margin-top:8px}
+
+h1,.verdict,button,.btn,.reasons li,.tagline,label.big{overflow-wrap:break-word;word-break:normal}
+.verdict span:last-child{min-width:0}
+.lang{white-space:nowrap}
+html:is([lang=ta],[lang=te],[lang=kn],[lang=bn],[lang=pa],[lang=gu],[lang=mr]) .verdict{font-size:1.5rem}
+html:is([lang=ta],[lang=te],[lang=kn]) .check{font-size:1.25rem}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>सच है?<small id="t_sub"></small></h1>
+    <button class="lang" id="langBtn" type="button">🌐 <span id="t_langBtn"></span></button>
+  </header>
+  <p class="tagline" id="t_tagline"></p>
+
+  <label class="big" for="msg" id="t_label"></label>
+  <textarea id="msg" dir="auto" autocomplete="off" spellcheck="false"></textarea>
+
+  <div class="row">
+    <label class="btn upload" id="uploadLbl">
+      <span aria-hidden="true">📷</span> <span id="t_upload"></span>
+      <input type="file" id="file" accept="image/*,.heic,.heif">
+    </label>
+    <img id="preview" alt="">
+    <div class="progress" id="progress" role="status" aria-live="polite">
+      <div class="bar"><div id="barFill"></div></div>
+      <div class="status" id="progressText"></div>
+    </div>
+    <button class="check" id="checkBtn" type="button"><span aria-hidden="true">🔍</span> <span id="t_check"></span></button>
+    <div class="checkstatus" id="checkStatus" aria-live="polite"></div>
+  </div>
+
+  <section id="result" aria-live="polite">
+    <div class="verdict"><span class="icon" id="vIcon"></span><span id="vText"></span></div>
+    <ul class="reasons" id="reasons"></ul>
+    <div class="sources" id="sources"></div>
+    <div class="tiplines" id="tiplines" hidden>
+      <h3 id="t_tipTitle"></h3>
+      <ul id="tipList"></ul>
+    </div>
+    <div class="actions">
+      <button class="wa" id="waBtn" type="button"><span aria-hidden="true">📤</span> <span id="t_wa"></span></button>
+      <button class="speak" id="speakBtn" type="button"><span aria-hidden="true">🔊</span> <span id="t_speak"></span></button>
+      <div class="note" id="voiceNote" hidden></div>
+      <button class="ghost" id="clearBtn" type="button"><span id="t_newc"></span></button>
+    </div>
+  </section>
+
+  <div class="row" style="margin-top:24px">
+    <button class="ghost" id="settingsBtn" type="button"><span aria-hidden="true">⚙️</span> <span id="t_settings"></span></button>
+  </div>
+  <p class="disclaimer" id="t_disclaimer"></p>
+</main>
+
+<div id="langModal" role="dialog" aria-modal="true">
+  <div class="box">
+    <h2 id="t_langTitle"></h2>
+    <div class="langgrid" id="langGrid"></div>
+  </div>
+</div>
+
+<div id="shade"></div>
+<aside id="drawer" aria-hidden="true">
+  <div class="inner">
+    <h2 id="t_setTitle"></h2>
+    <p id="t_setHelp"></p>
+    <label class="big" for="gemKey" id="t_keyLabel"></label>
+    <input id="gemKey" type="password" autocomplete="off">
+    <div class="row">
+      <button class="check" id="saveKey" type="button"><span id="t_save"></span></button>
+      <button class="ghost" id="clearKey" type="button"><span id="t_clearKey"></span></button>
+      <button class="ghost" id="closeDrawer" type="button"><span id="t_close"></span></button>
+    </div>
+    <p class="small" id="keyStatus"></p>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ============================ CONFIG ==================================
+   A built-in Gemini key may be injected at build time as XOR+base64 chunks
+   (never as plaintext). A key pasted in Settings is kept only in this
+   browser (localStorage) and overrides the built-in key.
+   GEMINI_MODELS: free-tier Flash models, most reliable first (tested Nov 2026).
+   A slow model gets 5 s before the next one is started in parallel. */
+const GEMINI_MODELS = ["gemini-3.5-flash-lite", "gemini-3.6-flash", "gemini-3.8-flash", "gemini-3.1-flash-lite"];
+const HEDGE_MS = 5000, MODEL_TIMEOUT_MS = 20000;
+/* Optional Google Fact Check Tools key (classic "AIza…" Cloud key; free). "" = skip. */
+const FACTCHECK_API_KEY = "";
+/* Indian fact-check sites whose public WordPress search allows browser requests (no key). */
+const FACTCHECK_SITES = ["factly.in", "www.altnews.in", "newschecker.in", "www.factcrescendo.com", "dfrac.org"];
+const TESSERACT_CDN = "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js";
+const LS_LANG = "sachhai.lang", LS_KEY = "sachhai.geminiKey", LS_MODEL = "sachhai.geminiModel";
+/* Injected at build time from GEMINI_API_KEY. Empty arrays/string if the env var was unset. */
+const BUILTIN_KEY_PARTS = ["EjBNKSpZ", "O3llKg0G", "LQdYZWFX", "OlgcLit+", "HwYqITgr", "DnoRESpe", "CTYlcDk4", "AQcPLi9m", "MTAKRT8="], BUILTIN_XOR = "SachHai7";
+function revealBuiltin(){
+  if(!BUILTIN_KEY_PARTS || !BUILTIN_KEY_PARTS.length) return "";
+  try{
+    const raw = atob(BUILTIN_KEY_PARTS.join(""));
+    const k = BUILTIN_XOR || "";
+    let s = "";
+    for(let i=0;i<raw.length;i++) s += String.fromCharCode(raw.charCodeAt(i) ^ k.charCodeAt(i % k.length));
+    return s;
+  }catch(e){ return ""; }
+}
+const BUILTIN_KEY = revealBuiltin();
+
+const LANGS = {
+  hi:{name:"हिंदी",    ai:"Hindi",     ocr:"hin", tts:"hi-IN"},
+  en:{name:"English",  ai:"English",   ocr:"eng", tts:"en-IN"},
+  pa:{name:"ਪੰਜਾਬੀ",   ai:"Punjabi (Gurmukhi script)", ocr:"pan", tts:"pa-IN"},
+  bn:{name:"বাংলা",    ai:"Bengali",   ocr:"ben", tts:"bn-IN"},
+  mr:{name:"मराठी",    ai:"Marathi",   ocr:"mar", tts:"mr-IN"},
+  ta:{name:"தமிழ்",    ai:"Tamil",     ocr:"tam", tts:"ta-IN"},
+  te:{name:"తెలుగు",   ai:"Telugu",    ocr:"tel", tts:"te-IN"},
+  gu:{name:"ગુજરાતી",  ai:"Gujarati",  ocr:"guj", tts:"gu-IN"},
+  kn:{name:"ಕನ್ನಡ",    ai:"Kannada",   ocr:"kan", tts:"kn-IN"}
+};
+const S = {"en": {"sub": "Is it true or fake?", "tagline": "Got a message or photo on WhatsApp? Put it here and we'll tell you if it looks true or fake.", "label": "Paste the WhatsApp message here", "placeholder": "Paste the message here…", "upload": "Upload photo / screenshot", "check": "Check it", "langBtn": "Language", "langTitle": "Choose your language", "ocrLoad": "Loading the photo reader…", "ocrRead": "Reading words from the photo…", "ocrDone": "Photo read ✔", "ocrFail": "Couldn't read the photo. Turn on internet, or type the message.", "ocrNoTextAI": "No clear words found in this photo. The AI check will look at the photo itself.", "ocrNoTextNoAI": "No clear words found in this photo. Please type the message, or upload a clearer photo.", "heicAI": "This photo type can't be read here, but the AI check will look at it.", "heicNoAI": "This photo type can't be read here. Please take a screenshot and upload that.", "checking": "Checking…", "searching": "Searching fact-check websites…", "empty": "First paste a message or upload a photo.", "fake": "Likely fake / scam", "real": "Looks real", "unsure": "Not sure — check before forwarding", "none": "Nothing to check here — this is just a normal message", "noSigns": "No common scam signs found, but we could not confirm this news.", "noTextReason": "We couldn't read any words in this photo.", "greetReason": "This looks like a greeting or personal message, with no news to check.", "tipTitle": "Ask these trusted fact-checkers on WhatsApp:", "wa": "Send this to the family group", "speak": "Read aloud", "stop": "Stop", "newc": "Check a new message", "settings": "Settings (AI check)", "setTitle": "AI check (optional)", "setHelp": "Optionally paste a free Google Gemini API key. It stays only in this phone/browser. With a key, the message is sent to Google for checking.", "setHelpBuiltin": "A key is already built in, so the AI check works without you pasting anything. You can paste your own key here to override it. A pasted key stays only in this phone/browser.", "keyLabel": "Gemini API key (optional)", "keyPh": "Paste key here", "keyPhOverride": "Paste your own to override (optional)", "save": "Save", "clearKey": "Remove key", "close": "Close", "keySaved": "✔ Your own key is saved and will be used.", "keyNone": "No key. AI check is off (everything else still works).", "keyBuiltin": "Using built-in key; paste your own to override", "disclaimer": "This is a helper, not the final word. No medical or legal advice. No tracking, no login — your message stays on your device (only the photo reader loads from the internet; the message is sent to the AI and fact-check websites only if the AI check is on).", "aiSays": "AI check", "srcTitle": "Fact-check articles:", "aiErr": "AI check failed (check internet or key).", "aiRate": "AI free limit reached for now, try again in a minute.", "aiKey": "Gemini key is not valid — check Settings.", "aiBusy": "AI is busy right now, please try again in a little while.", "waFake": "Hello 🙏 This message looks fake or a scam:", "waUnsure": "Hello 🙏 This message is not confirmed, please check before forwarding:", "waReal": "Hello 🙏 I checked this message and it looks real:", "waEnd": "Please don't forward without checking. You can check here too:", "pibNote": "for government claims", "noVoice": "A read-aloud voice for this language is not available on this phone.", "r_kyc": "Threat that your bank/KYC/account will be blocked — banks never ask for KYC this way.", "r_lottery": "Claims you won a lottery/prize/KBC — a very common scam. Real prizes never ask you to pay.", "r_power": "\"Electricity will be cut tonight\" — power companies don't send such messages from personal numbers.", "r_arrest": "\"Digital arrest\"/CBI/police video call — police never arrest on video call or ask for money.", "r_otp": "Asks for OTP/PIN/CVV — never share these with anyone, not even 'the bank'.", "r_chain": "\"Forward to 10 people\" — real news doesn't need chain forwarding.", "r_scheme": "Free recharge / government scheme offer — these are usually fake. Check on pib.gov.in.", "r_apk": "Asks you to install an app (.apk) — it can steal money from your phone. Don't open it.", "r_link": "Short or strange link — don't tap links you don't know.", "r_urgent": "Creates urgency (\"immediately\", \"today only\") — a common scam trick.", "r_click": "Asks you to click a link.", "r_money": "Asks you to send money or a fee.", "r_hoax": "Looks like a well-known old hoax (UNESCO/NASA/WhatsApp shutting down, etc.).", "r_health": "Miracle cure claim — ask your own doctor about health matters.", "r_fearstat": "Fear-mongering health or doomsday statistic (for example \"X% will get cancer by 20xx\") — WHO and other agencies do not make such claims. This is a common fake forward."}, "hi": {"sub": "सच है या झूठ?", "tagline": "WhatsApp पर आया कोई संदेश या फ़ोटो? यहाँ डालें, हम बताएँगे सच है या झूठ।", "label": "WhatsApp संदेश यहाँ चिपकाएँ (Paste)", "placeholder": "यहाँ संदेश चिपकाएँ…", "upload": "फ़ोटो / स्क्रीनशॉट डालें", "check": "जाँच करें", "langBtn": "भाषा", "langTitle": "अपनी भाषा चुनें", "ocrLoad": "फ़ोटो पढ़ने का औज़ार लोड हो रहा है…", "ocrRead": "फ़ोटो से शब्द पढ़ रहे हैं…", "ocrDone": "फ़ोटो पढ़ ली गई ✔", "ocrFail": "फ़ोटो पढ़ नहीं पाए। इंटरनेट चालू करें या संदेश लिखकर डालें।", "ocrNoTextAI": "इस फ़ोटो में साफ़ शब्द नहीं मिले। AI जाँच फ़ोटो को खुद देखेगी।", "ocrNoTextNoAI": "इस फ़ोटो में साफ़ शब्द नहीं मिले। कृपया संदेश लिखकर डालें, या साफ़ फ़ोटो डालें।", "heicAI": "यह फ़ोटो यहाँ पढ़ी नहीं जा सकती, पर AI जाँच इसे देखेगी।", "heicNoAI": "यह फ़ोटो यहाँ पढ़ी नहीं जा सकती। कृपया स्क्रीनशॉट लेकर डालें।", "checking": "जाँच हो रही है…", "searching": "फ़ैक्ट-चेक वेबसाइटों पर खोज रहे हैं…", "empty": "पहले संदेश चिपकाएँ या फ़ोटो डालें।", "fake": "झूठा / धोखा लगता है", "real": "सही लगता है", "unsure": "पक्का नहीं — आगे भेजने से पहले जाँचें", "none": "यहाँ जाँचने को कुछ नहीं — यह एक आम संदेश है", "noSigns": "धोखे के आम निशान नहीं मिले, पर हम इस खबर को पक्का नहीं कर पाए।", "noTextReason": "इस फ़ोटो में हमें कोई शब्द नहीं मिले।", "greetReason": "यह शुभकामना या निजी संदेश लगता है, इसमें जाँचने लायक कोई खबर नहीं है।", "tipTitle": "इन भरोसेमंद नंबरों पर WhatsApp करके पूछें:", "wa": "परिवार के ग्रुप में भेजें", "speak": "सुनें (बोलकर पढ़ें)", "stop": "रोकें", "newc": "नया संदेश जाँचें", "settings": "सेटिंग्स (AI जाँच)", "setTitle": "AI जाँच (मर्ज़ी से)", "setHelp": "चाहें तो Google Gemini की मुफ़्त API key डालें। यह key सिर्फ़ इसी फ़ोन/ब्राउज़र में रहती है। key डालने पर संदेश जाँच के लिए Google को भेजा जाएगा।", "setHelpBuiltin": "एक key पहले से लगी हुई है, इसलिए बिना कुछ डाले AI जाँच चलती है। अपनी key डालें तो वही इस्तेमाल होगी। डाली गई key सिर्फ़ इसी फ़ोन/ब्राउज़र में रहती है।", "keyLabel": "Gemini API key (मर्ज़ी से)", "keyPh": "key यहाँ डालें", "keyPhOverride": "अपनी key डालें (मर्ज़ी से)", "save": "सेव करें", "clearKey": "key हटाएँ", "close": "बंद करें", "keySaved": "✔ आपकी अपनी key सेव है और वही इस्तेमाल होगी।", "keyNone": "कोई key नहीं। AI जाँच बंद है (बाकी सब काम करता है)।", "keyBuiltin": "बनी-बनाई key इस्तेमाल हो रही है; अपनी डालें तो वही चलेगी", "disclaimer": "यह एक मददगार औज़ार है, आख़िरी फ़ैसला नहीं। कोई डॉक्टरी या क़ानूनी सलाह नहीं। कोई ट्रैकिंग नहीं, कोई लॉगिन नहीं — आपका संदेश आपके फ़ोन पर ही रहता है (सिर्फ़ फ़ोटो पढ़ने का औज़ार इंटरनेट से आता है; AI जाँच चालू हो तभी संदेश AI और फ़ैक्ट-चेक वेबसाइटों को भेजा जाता है)।", "aiSays": "AI जाँच", "srcTitle": "फ़ैक्ट-चेक लेख:", "aiErr": "AI जाँच नहीं हो पाई (इंटरनेट या key देखें)।", "aiRate": "AI जाँच की मुफ़्त सीमा अभी भर गई है, एक मिनट बाद फिर कोशिश करें।", "aiKey": "Gemini key सही नहीं है — सेटिंग्स में देखें।", "aiBusy": "AI अभी व्यस्त है, थोड़ी देर बाद फिर कोशिश करें।", "waFake": "नमस्ते 🙏 यह संदेश झूठा या धोखा लगता है:", "waUnsure": "नमस्ते 🙏 यह संदेश पक्का नहीं है, कृपया आगे भेजने से पहले जाँच लें:", "waReal": "नमस्ते 🙏 मैंने यह संदेश जाँचा, यह सही लगता है:", "waEnd": "कृपया बिना जाँचे आगे न भेजें। आप भी यहाँ जाँच सकते हैं:", "pibNote": "सरकारी दावों के लिए", "noVoice": "इस फ़ोन पर इस भाषा में बोलकर पढ़ने की आवाज़ उपलब्ध नहीं है।", "r_kyc": "बैंक/KYC/खाता बंद होने की धमकी — बैंक कभी ऐसे मैसेज से KYC नहीं माँगता।", "r_lottery": "लॉटरी/इनाम/KBC जीतने का दावा — यह आम धोखा है। असली इनाम के लिए पैसे नहीं माँगे जाते।", "r_power": "\"आज रात बिजली कट जाएगी\" — बिजली विभाग ऐसे निजी नंबर से मैसेज नहीं भेजता।", "r_arrest": "\"डिजिटल अरेस्ट\"/CBI/पुलिस वीडियो कॉल — पुलिस कभी वीडियो कॉल पर गिरफ़्तार नहीं करती या पैसे नहीं माँगती।", "r_otp": "OTP/PIN/CVV माँगा गया — इसे कभी किसी को न बताएँ, बैंक वाले को भी नहीं।", "r_chain": "\"10 लोगों को भेजो\" जैसी बात — सच्ची खबर को ऐसे फैलाने की ज़रूरत नहीं होती।", "r_scheme": "मुफ़्त रिचार्ज/सरकारी योजना का लालच — ऐसी योजनाएँ ज़्यादातर नकली होती हैं। pib.gov.in पर जाँचें।", "r_apk": "कोई ऐप (.apk) डाउनलोड करने को कहा — यह आपके फ़ोन से पैसे चुरा सकता है। न खोलें।", "r_link": "छोटा/अजीब लिंक है — बिना जाने लिंक न दबाएँ।", "r_urgent": "जल्दबाज़ी कराई जा रही है (\"तुरंत\", \"आज ही\") — धोखेबाज़ ऐसा ही करते हैं।", "r_click": "लिंक पर क्लिक करने को कहा गया।", "r_money": "पैसे/फ़ीस भेजने को कहा गया।", "r_hoax": "यह पुरानी जानी-पहचानी झूठी खबर जैसा है (UNESCO/NASA/WhatsApp बंद आदि)।", "r_health": "चमत्कारी इलाज का दावा — सेहत के बारे में अपने डॉक्टर से ही पूछें।", "r_fearstat": "डरावना स्वास्थ्य या तबाही वाला आँकड़ा (जैसे \"2027 तक 90% आबादी को कैंसर होगा\") — WHO ऐसी भविष्यवाणी नहीं करता। यह आम झूठा मैसेज है।"}, "mr": {"sub": "हे खरे आहे की खोटे?", "tagline": "WhatsApp वर मेसेज किंवा फोटो आलाय? इथे टाका, आम्ही ते खरे आहे की खोटे ते सांगू.", "label": "इथे WhatsApp मेसेज पेस्ट करा (टाका)", "placeholder": "इथे मेसेज टाका…", "upload": "फोटो किंवा स्क्रीनशॉट टाका", "check": "तपासा", "langBtn": "भाषा", "langTitle": "तुमची भाषा निवडा", "ocrLoad": "फोटो वाचणारे साधन सुरू होत आहे…", "ocrRead": "फोटोतील शब्द वाचत आहे…", "ocrDone": "फोटो वाचला ✔", "ocrFail": "फोटो वाचता आला नाही. इंटरनेट सुरू करा किंवा मेसेज टाईप करा.", "ocrNoTextAI": "या फोटोत स्पष्ट शब्द सापडले नाहीत. AI आता थेट फोटो तपासेल.", "ocrNoTextNoAI": "या फोटोत स्पष्ट शब्द सापडले नाहीत. कृपया मेसेज टाईप करा किंवा जास्त चांगला फोटो टाका.", "heicAI": "हा फोटो इथे वाचता येत नाही, पण AI हे तपासेल.", "heicNoAI": "हा फोटो इथे वाचता येत नाही. कृपया स्क्रीनशॉट काढून तो टाका.", "checking": "तपासणी सुरू आहे…", "searching": "माहिती तपासणाऱ्या वेबसाईटवर शोधत आहे…", "empty": "आधी मेसेज टाका किंवा फोटो अपलोड करा.", "fake": "खोटे किंवा फसवणूक असण्याची शक्यता", "real": "खरे वाटते", "unsure": "खात्री नाही — पुढे पाठवण्यापूर्वी तपासा", "none": "इथे तपासण्यासारखे काही नाही — हा एक साधा मेसेज आहे", "noSigns": "फसवणुकीचे कोणतेही लक्षण सापडले नाही, पण आम्ही या बातमीची पुष्टी करू शकलो नाही.", "noTextReason": "आम्हाला या फोटोतील शब्द वाचता आले नाहीत.", "greetReason": "हा शुभेच्छा किंवा वैयक्तिक मेसेज वाटतो, यात तपासण्यासारखी बातमी नाही.", "tipTitle": "WhatsApp वर या विश्वासू तपासणीदारांना विचारा:", "wa": "हे कुटुंबाच्या ग्रुपवर पाठवा", "speak": "मोठ्याने वाचून दाखवा", "stop": "थांबवा", "newc": "नवीन मेसेज तपासा", "settings": "सेटिंग्ज (AI तपासणी)", "setTitle": "AI तपासणी (ऐच्छिक)", "setHelp": "तुम्ही इच्छित असल्यास मोफत Google Gemini API key टाकू शकता. ही फक्त तुमच्या फोन/ब्राउझरमध्येच राहते. Key टाकल्यास मेसेज तपासणीसाठी Google कडे पाठवला जातो.", "keyLabel": "Gemini API key", "keyPh": "इथे key टाका", "save": "सेव्ह करा", "clearKey": "Key काढून टाका", "close": "बंद करा", "keySaved": "✔ Key सेव्ह झाली. AI तपासणी सुरू आहे.", "keyNone": "Key नाही. AI तपासणी बंद आहे (बाकी सर्व काही काम करत आहे).", "disclaimer": "हे फक्त मदतीसाठी आहे, अंतिम शब्द नाही. वैद्यकीय किंवा कायदेशीर सल्ला नाही. ट्रॅकिंग नाही, लॉगिन नाही — तुमचा मेसेज तुमच्या फोनवरच राहतो (फक्त फोटो वाचणारे साधन इंटरनेटवरून लोड होते; AI तपासणी सुरू असेल तरच मेसेज AI आणि माहिती तपासणाऱ्या वेबसाईटवर पाठवला जातो).", "aiSays": "AI तपासणी", "srcTitle": "माहिती तपासणी लेख:", "aiErr": "AI तपासणी अयशस्वी झाली (इंटरनेट किंवा key तपासा).", "aiRate": "AI ची मोफत मर्यादा सध्या संपली आहे, एका मिनिटाने पुन्हा प्रयत्न करा.", "aiKey": "Gemini key योग्य नाही — सेटिंग्ज तपासा.", "aiBusy": "AI सध्या व्यस्त आहे, कृपया थोड्या वेळाने पुन्हा प्रयत्न करा.", "waFake": "नमस्ते 🙏 हा मेसेज खोटा किंवा फसवणूक करणारा वाटतोय:", "waUnsure": "नमस्ते 🙏 या मेसेजची खात्री झालेली नाही, पुढे पाठवण्यापूर्वी कृपया तपासा:", "waReal": "नमस्ते 🙏 मी हा मेसेज तपासला असून तो खरा वाटतोय:", "waEnd": "कृपया न तपासता पुढे पाठवू नका. तुम्ही इथेही तपासू शकता:", "pibNote": "सरकारी दाव्यांसाठी", "noVoice": "या भाषेसाठी मोठ्याने वाचणारा आवाज या फोनवर उपलब्ध नाही.", "r_kyc": "तुमची बँक/KYC/खाते बंद होईल अशी धमकी देणे — बँका कधीही अशा प्रकारे KYC मागत नाहीत.", "r_lottery": "तुम्हाला लॉटरी/बक्षीस/KBC जिंकल्याचा दावा — ही खूप सामान्य फसवणूक आहे. खरे बक्षीस कधीही पैसे मागत नाही.", "r_power": "\"आज रात्री वीज कापली जाईल\" — वीज कंपन्या वैयक्तिक नंबरवरून असे मेसेज पाठवत नाहीत.", "r_arrest": "\"डिजिटल अटक\"/CBI/पोलीस व्हिडिओ कॉल — पोलीस कधीही व्हिडिओ कॉलवर अटक करत नाहीत किंवा पैसे मागत नाहीत.", "r_otp": "OTP/PIN/CVV मागत आहे — हे कधीही कोणाशीही शेअर करू नका, अगदी 'बँकेसोबत' सुद्धा नाही.", "r_chain": "\"१० लोकांना फॉरवर्ड करा\" — खऱ्या बातम्यांना अशी साखळी करून पाठवण्याची गरज नसते.", "r_scheme": "फ्री रिचार्ज / सरकारी योजनेची ऑफर — या सहसा खोट्या असतात. pib.gov.in वर तपासा.", "r_apk": "अ‍ॅप (.apk) इन्स्टॉल करायला सांगणे — हे तुमच्या फोनवरून पैसे चोरू शकते. ते उघडू नका.", "r_link": "लहान किंवा अनोळखी लिंक — माहित नसलेल्या लिंकवर क्लिक करू नका.", "r_urgent": "घाई गडबड निर्माण करणे (\"तातडीने\", \"फक्त आजच\") — फसवणुकीची ही एक सामान्य युक्ती आहे.", "r_click": "लिंकवर क्लिक करायला सांगणे.", "r_money": "पैसे किंवा फी पाठवायला सांगणे.", "r_hoax": "एक जुनी प्रसिद्ध खोटी अफवा वाटते (UNESCO/NASA/WhatsApp बंद होणार इ.).", "r_health": "चमत्कारी उपायाचा दावा — आरोग्याच्या बाबतीत तुमच्या स्वतःच्या डॉक्टरांना विचारा."}, "bn": {"sub": "এটা কি সত্যি নাকি ভুয়ো?", "tagline": "WhatsApp-এ কোনো মেসেজ বা ছবি পেয়েছেন? এখানে দিন, আমরা বলে দেব সেটা সত্যি নাকি ভুয়ো।", "label": "WhatsApp-এর মেসেজটি এখানে পেস্ট করুন", "placeholder": "এখানে মেসেজটি পেস্ট করুন…", "upload": "ছবি / স্ক্রিনশট আপলোড করুন", "check": "যাচাই করুন", "langBtn": "ভাষা", "langTitle": "আপনার ভাষা বেছে নিন", "ocrLoad": "ছবি পড়ার ব্যবস্থা চালু হচ্ছে…", "ocrRead": "ছবি থেকে লেখা পড়া হচ্ছে…", "ocrDone": "ছবি পড়া হয়ে গেছে ✔", "ocrFail": "ছবিটি পড়া গেল না। ইন্টারনেট চালু করুন, অথবা মেসেজটি লিখে দিন।", "ocrNoTextAI": "এই ছবিতে স্পষ্ট কোনো লেখা পাওয়া যায়নি। AI ব্যবস্থা সরাসরি ছবিটি দেখে পরীক্ষা করবে।", "ocrNoTextNoAI": "এই ছবিতে স্পষ্ট কোনো লেখা পাওয়া যায়নি। দয়া করে মেসেজটি লিখে দিন, বা একটি পরিষ্কার ছবি আপলোড করুন।", "heicAI": "এই ধরনের ছবি এখানে পড়া যাচ্ছে না, তবে AI সরাসরি ছবিটি পরীক্ষা করবে।", "heicNoAI": "এই ধরনের ছবি এখানে পড়া যাচ্ছে না। দয়া করে একটি স্ক্রিনশট নিয়ে সেটি আপলোড করুন।", "checking": "যাচাই করা হচ্ছে…", "searching": "খবরের সত্যতা যাচাইয়ের ওয়েবসাইটগুলোতে খোঁজা হচ্ছে…", "empty": "প্রথমে একটি মেসেজ পেস্ট করুন বা ছবি আপলোড করুন।", "fake": "সম্ভবত ভুয়ো / জালিয়াতি", "real": "সত্যি বলে মনে হচ্ছে", "unsure": "নিশ্চিত নয় — কাউকে পাঠানোর আগে ভালো করে যাচাই করুন", "none": "এখানে যাচাই করার মতো কিছু নেই — এটা একটা সাধারণ মেসেজ", "noSigns": "জালিয়াতির কোনো সাধারণ লক্ষণ পাওয়া যায়নি, তবে এই খবরটি আমরা নিশ্চিত করতে পারিনি।", "noTextReason": "আমরা এই ছবি থেকে কোনো লেখা পড়তে পারিনি।", "greetReason": "এটা কোনো শুভেচ্ছা বা ব্যক্তিগত মেসেজ বলে মনে হচ্ছে, যাচাই করার মতো কোনো খবর নেই।", "tipTitle": "WhatsApp-এ এই বিশ্বস্ত তথ্য-যাচাইকারীদের জিজ্ঞাসা করতে পারেন:", "wa": "এটা পারিবারিক গ্রুপে পাঠান", "speak": "পড়ে শোনান", "stop": "থামুন", "newc": "নতুন মেসেজ পরীক্ষা করুন", "settings": "Settings (AI পরীক্ষা)", "setTitle": "AI পরীক্ষা (ঐচ্ছিক)", "setHelp": "চাইলে একটি বিনামূল্যে পাওয়া Google Gemini API key দিতে পারেন। এটি শুধু আপনার ফোন বা ব্রাউজারেই থাকবে। Key দিলে মেসেজটি যাচাইয়ের জন্য Google-এর কাছে পাঠানো হবে।", "keyLabel": "Gemini API key", "keyPh": "এখানে key পেস্ট করুন", "save": "সেভ করুন", "clearKey": "Key মুছে ফেলুন", "close": "বন্ধ করুন", "keySaved": "✔ Key সেভ হয়েছে। AI পরীক্ষা চালু আছে।", "keyNone": "কোনো key নেই। AI পরীক্ষা বন্ধ (বাকি সব কিছু ঠিকভাবেই কাজ করবে)।", "disclaimer": "এটি সাহায্যের জন্য, এটাই শেষ কথা নয়। কোনো ডাক্তারি বা আইনি পরামর্শ দেওয়া হয় না। কোনো ট্র্যাকিং বা লগইন নেই — আপনার মেসেজ আপনার ফোনেই থাকবে (শুধু ছবি পড়ার বিষয়টি ইন্টারনেট থেকে লোড হয়; আর AI পরীক্ষা চালু থাকলে তবেই মেসেজটি AI ও তথ্য-যাচাইয়ের ওয়েবসাইটে পাঠানো হয়)।", "aiSays": "AI পরীক্ষা", "srcTitle": "তথ্য-যাচাইয়ের খবরগুলি দেখুন:", "aiErr": "AI পরীক্ষা ব্যর্থ হয়েছে (ইন্টারনেট বা key পরীক্ষা করুন)।", "aiRate": "আপাতত AI-এর বিনামূল্যে ব্যবহারের সীমা শেষ হয়েছে, এক মিনিট পর আবার চেষ্টা করুন।", "aiKey": "Gemini key-টি সঠিক নয় — Settings দেখুন।", "aiBusy": "AI এখন ব্যস্ত আছে, কিছুক্ষণ পর আবার চেষ্টা করুন।", "waFake": "নমস্কার 🙏 এই মেসেজটি ভুয়ো বা জালিয়াতি বলে মনে হচ্ছে:", "waUnsure": "নমস্কার 🙏 এই মেসেজটির সত্যতা নিশ্চিত নয়, কাউকে পাঠানোর আগে যাচাই করুন:", "waReal": "নমস্কার 🙏 আমি এই মেসেজটি পরীক্ষা করেছি এবং এটি সত্যি বলে মনে হচ্ছে:", "waEnd": "দয়া করে যাচাই না করে ফরওয়ার্ড করবেন না। আপনিও এখানে পরীক্ষা করতে পারেন:", "pibNote": "সরকারি খবরের ক্ষেত্রে", "noVoice": "এই ভাষার জন্য পড়ে শোনানোর আওয়াজ এই ফোনে পাওয়া যাচ্ছে না।", "r_kyc": "ব্যাংক/KYC/অ্যাাকাউন্ট বন্ধ করে দেওয়ার ভয় দেখানো — ব্যাংক কখনোই এইভাবে KYC করতে বলে না।", "r_lottery": "আপনি লটারি/পুরস্কার/KBC জিতেছেন বলা — এটি খুব সাধারণ জালিয়াতি। আসল পুরস্কার পেতে কখনোই টাকা দিতে হয় না।", "r_power": "\"আজ রাতে বিদ্যুৎ সংযোগ কেটে দেওয়া হবে\" — বিদ্যুৎ দপ্তর কোনো ব্যক্তিগত নম্বর থেকে এই ধরনের মেসেজ পাঠায় না।", "r_arrest": "\"Digital arrest\"/CBI/পুলিশের ভিডিও কল — পুলিশ কখনোই ভিডিও কলে কাউকেও গ্রেফতার করে না বা টাকা চায় না।", "r_otp": "OTP/PIN/CVV চাওয়া — এগুলো কখনোই কারও সাথে শেয়ার করবেন না, এমনকি 'ব্যাংক'-এর সাথেও নয়।", "r_chain": "\"১০ জনকে পাঠান\" — আসল খবর ছড়াতে এই ধরনের মেসেজ পাঠাতে হয় না।", "r_scheme": "বিনামূল্যে রিচার্জ / সরকারি প্রকল্পের অফার — এগুলো সাধারণত ভুয়ো হয়। pib.gov.in-এ দেখে নিন।", "r_apk": "কোনো অ্যাপ (.apk) ইনস্টল করতে বলা — এটি আপনার ফোন থেকে টাকা চুরি করতে পারে। এটি খুলবেন না।", "r_link": "ছোট বা অদ্ভুত লিংক — অচেনা কোনো লিংকে হাত দেবেন না।", "r_urgent": "তাড়াহুড়ো তৈরি করা (\"জরুরি\", \"আজকের মধ্যেই\") — এটি জালিয়াতির একটি সাধারণ কৌশল।", "r_click": "আপনাকে কোনো লিংকে ক্লিক করতে বলা হচ্ছে।", "r_money": "টাকা বা ফি পাঠাতে বলা হচ্ছে।", "r_hoax": "পুরোনো পরিচিত কোনো মিথ্যা গুজব (যেমন UNESCO/NASA/WhatsApp বন্ধ হয়ে যাওয়া ইত্যাদি)।", "r_health": "অলৌকিক উপায়ে রোগ সারানোর দাবি — স্বাস্থ্য সম্পর্কিত বিষয়ে আপনার নিজের ডাক্তারকে জিজ্ঞাসা করুন।"}, "pa": {"sub": "ਕੀ ਇਹ ਸੱਚ ਹੈ ਜਾਂ ਝੂਠ?", "tagline": "WhatsApp 'ਤੇ ਕੋਈ ਸੁਨੇਹਾ ਜਾਂ ਫੋਟੋ ਆਈ ਹੈ? ਇੱਥੇ ਪਾਓ, ਅਸੀਂ ਦੱਸਾਂਗੇ ਕਿ ਇਹ ਸੱਚੀ ਲੱਗਦੀ ਹੈ ਜਾਂ ਝੂਠੀ।", "label": "ਇੱਥੇ WhatsApp ਵਾਲਾ ਸੁਨੇਹਾ ਪਾਓ", "placeholder": "ਇੱਥੇ ਸੁਨੇਹਾ ਪਾਓ…", "upload": "ਫੋਟੋ / ਸਕ੍ਰੀਨਸ਼ਾਟ ਅੱਪਲੋਡ ਕਰੋ", "check": "ਜਾਂਚ ਕਰੋ", "langBtn": "ਭਾਸ਼ਾ", "langTitle": "ਆਪਣੀ ਭਾਸ਼ਾ ਚੁਣੋ", "ocrLoad": "ਫੋਟੋ ਪੜ੍ਹਨ ਵਾਲਾ ਸਿਸਟਮ ਚੱਲ ਰਿਹਾ ਹੈ…", "ocrRead": "ਫੋਟੋ ਤੋਂ ਅੱਖਰ ਪੜ੍ਹੇ ਜਾ ਰਹੇ ਹਨ…", "ocrDone": "ਫੋਟੋ ਪੜ੍ਹ ਲਈ ਗਈ ਹੈ ✔", "ocrFail": "ਫੋਟੋ ਪੜ੍ਹੀ ਨਹੀਂ ਗਈ। ਇੰਟਰਨੈੱਟ ਚਾਲੂ ਕਰੋ ਜਾਂ ਸੁਨੇਹਾ ਆਪ ਲਿਖੋ।", "ocrNoTextAI": "ਇਸ ਫੋਟੋ ਵਿੱਚ ਕੋਈ ਅੱਖਰ ਸਾਫ਼ ਨਹੀਂ ਮਿਲੇ। AI ਹੁਣ ਸਿੱਧੀ ਫੋਟੋ ਦੀ ਜਾਂਚ ਕਰੇਗਾ।", "ocrNoTextNoAI": "ਇਸ ਫੋਟੋ ਵਿੱਚ ਕੋਈ ਅੱਖਰ ਸਾਫ਼ ਨਹੀਂ ਮਿਲੇ। ਕਿਰਪਾ ਕਰਕੇ ਸੁਨੇਹਾ ਲਿਖੋ ਜਾਂ ਹੋਰ ਸਾਫ਼ ਫੋਟੋ ਅੱਪਲੋਡ ਕਰੋ।", "heicAI": "ਇਸ ਕਿਸਮ ਦੀ ਫੋਟੋ ਇੱਥੇ ਪੜ੍ਹੀ ਨਹੀਂ ਜਾ ਸਕਦੀ, ਪਰ AI ਇਸ ਦੀ ਜਾਂਚ ਕਰ ਲਵੇਗਾ।", "heicNoAI": "ਇਸ ਕਿਸਮ ਦੀ ਫੋਟੋ ਇੱਥੇ ਪੜ੍ਹੀ ਨਹੀਂ ਜਾ ਸਕਦੀ। ਕਿਰਪਾ ਕਰਕੇ ਇਸ ਦਾ ਸਕ੍ਰੀਨਸ਼ਾਟ ਲੈ ਕੇ ਅੱਪਲੋਡ ਕਰੋ।", "checking": "ਜਾਂਚ ਹੋ ਰਹੀ ਹੈ…", "searching": "ਜਾਂਚ ਕਰਨ ਵਾਲੀਆਂ ਵੈੱਬਸਾਈਟਾਂ 'ਤੇ ਲੱਭਿਆ ਜਾ ਰਿਹਾ ਹੈ…", "empty": "ਪਹਿਲਾਂ ਸੁਨੇਹਾ ਪਾਓ ਜਾਂ ਫੋਟੋ ਅੱਪਲੋਡ ਕਰੋ।", "fake": "ਝੂਠਾ / ਠੱਗੀ ਲੱਗਦੀ ਹੈ", "real": "ਸੱਚਾ ਲੱਗਦਾ ਹੈ", "unsure": "ਪੱਕਾ ਨਹੀਂ — ਅੱਗੇ ਭੇਜਣ ਤੋਂ ਪਹਿਲਾਂ ਜਾਂਚ ਲਵੋ", "none": "ਇੱਥੇ ਜਾਂਚਣ ਲਈ ਕੁੱਝ ਨਹੀਂ ਹੈ — ਇਹ ਇੱਕ ਆਮ ਸੁਨੇਹਾ ਹੈ", "noSigns": "ਠੱਗੀ ਦਾ ਕੋਈ ਆਮ ਨਿਸ਼ਾਨ ਨਹੀਂ ਮਿਲਿਆ, ਪਰ ਅਸੀਂ ਇਸ ਖ਼ਬਰ ਦੀ ਪੁਸ਼ਟੀ ਨਹੀਂ ਕਰ ਸਕੇ।", "noTextReason": "ਅਸੀਂ ਇਸ ਫੋਟੋ ਵਿੱਚੋਂ ਅੱਖਰ ਨਹੀਂ ਪੜ੍ਹ ਸਕੇ।", "greetReason": "ਇਹ ਹਾਲ-ਚਾਲ ਜਾਂ ਨਿੱਜੀ ਸੁਨੇਹਾ ਲੱਗਦਾ ਹੈ, ਇਸ ਵਿੱਚ ਕੋਈ ਖ਼ਬਰ ਨਹੀਂ ਹੈ।", "tipTitle": "WhatsApp 'ਤੇ ਇਹਨਾਂ ਭਰੋਸੇਮੰਦ ਜਾਂਚਕਰਤਾਵਾਂ ਤੋਂ ਪੁੱਛੋ:", "wa": "ਇਹ ਪਰਿਵਾਰ ਵਾਲੇ ਗਰੁੱਪ ਵਿੱਚ ਭੇਜੋ", "speak": "ਬੋਲ ਕੇ ਸੁਣਾਓ", "stop": "ਰੋਕੋ", "newc": "ਨਵਾਂ ਸੁਨੇਹਾ ਜਾਂਚੋ", "settings": "ਸੈਟਿੰਗਾਂ (AI ਜਾਂਚ)", "setTitle": "AI ਜਾਂਚ (ਮਰਜ਼ੀ ਮੁਤਾਬਕ)", "setHelp": "ਚਾਹੋ ਤਾਂ ਮੁਫ਼ਤ ਵਾਲੀ Google Gemini API key ਇੱਥੇ ਪਾਓ। ਇਹ ਸਿਰਫ਼ ਤੁਹਾਡੇ ਫੋਨ/ਬ੍ਰਾਊਜ਼ਰ ਵਿੱਚ ਹੀ ਰਹੇਗੀ। Key ਨਾਲ ਸੁਨੇਹਾ ਜਾਂਚ ਲਈ Google ਕੋਲ ਭੇਜਿਆ ਜਾਂਦਾ ਹੈ।", "keyLabel": "Gemini API key", "keyPh": "Key ਇੱਥੇ ਪਾਓ", "save": "ਸਾਂਭੋ", "clearKey": "Key ਹਟਾਓ", "close": "ਬੰਦ ਕਰੋ", "keySaved": "✔ Key ਸਾਂਭੀ ਗਈ। AI ਜਾਂਚ ਚਾਲੂ ਹੈ।", "keyNone": "ਕੋਈ Key ਨਹੀਂ ਹੈ। AI ਜਾਂਚ ਬੰਦ ਹੈ (ਬਾਕੀ ਸਭ ਕੁਝ ਕੰਮ ਕਰਦਾ ਰਹੇਗਾ)।", "disclaimer": "ਇਹ ਸਿਰਫ਼ ਮਦਦ ਲਈ ਹੈ, ਆਖਰੀ ਫੈਸਲਾ ਨਹੀਂ। ਇਹ ਕੋਈ ਡਾਕਟਰੀ ਜਾਂ ਕਾਨੂੰਨੀ ਸਲਾਹ ਨਹੀਂ ਹੈ। ਕੋਈ ਟਰੈਕਿੰਗ ਨਹੀਂ, ਕੋਈ ਲੌਗਇਨ ਨਹੀਂ — ਤੁਹਾਡਾ ਸੁਨੇਹਾ ਤੁਹਾਡੇ ਫੋਨ ਵਿੱਚ ਹੀ ਰਹਿੰਦਾ ਹੈ (ਸਿਰਫ਼ ਫੋਟੋ ਪੜ੍ਹਨ ਵਾਲਾ ਸਿਸਟਮ ਇੰਟਰਨੈੱਟ ਤੋਂ ਚੱਲਦਾ ਹੈ; ਸੁਨੇਹਾ AI ਅਤੇ ਵੈੱਬਸਾਈਟਾਂ ਕੋਲ ਉਦੋਂ ਹੀ ਜਾਂਦਾ ਹੈ ਜੇ AI ਜਾਂਚ ਚਾਲੂ ਹੋਵੇ)।", "aiSays": "AI ਜਾਂਚ", "srcTitle": "ਖ਼ਬਰ ਦੀ ਜਾਂਚ ਵਾਲੇ ਲੇਖ:", "aiErr": "AI ਜਾਂਚ ਫੇਲ੍ਹ ਹੋ ਗਈ (ਇੰਟਰਨੈੱਟ ਜਾਂ key ਦੀ ਜਾਂਚ ਕਰੋ)।", "aiRate": "AI ਦੀ ਮੁਫ਼ਤ ਸੀਮਾ ਹੁਣੇ ਪੂਰੀ ਹੋ ਗਈ ਹੈ, ਇੱਕ ਮਿੰਟ ਬਾਅਦ ਮੁੜ ਕੋਸ਼ਿਸ਼ ਕਰੋ।", "aiKey": "Gemini key ਸਹੀ ਨਹੀਂ ਹੈ — ਸੈਟਿੰਗਾਂ ਦੀ ਜਾਂਚ ਕਰੋ।", "aiBusy": "AI ਇਸ ਵੇਲੇ ਰੁੱਝਿਆ ਹੋਇਆ ਹੈ, ਕਿਰਪਾ ਕਰਕੇ ਥੋੜ੍ਹੀ ਦੇਰ ਬਾਅਦ ਕੋਸ਼ਿਸ਼ ਕਰੋ।", "waFake": "ਸਤਿ ਸ੍ਰੀ ਅਕਾਲ 🙏 ਇਹ ਸੁਨੇਹਾ ਝੂਠਾ ਜਾਂ ਠੱਗੀ ਲੱਗਦਾ ਹੈ:", "waUnsure": "ਸਤਿ ਸ੍ਰੀ ਅਕਾਲ 🙏 ਇਸ ਸੁਨੇਹੇ ਦੀ ਪੁਸ਼ਟੀ ਨਹੀਂ ਹੋਈ, ਕਿਰਪਾ ਕਰਕੇ ਅੱਗੇ ਭੇਜਣ ਤੋਂ ਪਹਿਲਾਂ ਜਾਂਚ ਲਵੋ:", "waReal": "ਸਤਿ ਸ੍ਰੀ ਅਕਾਲ 🙏 ਮੈਂ ਇਹ ਸੁਨੇਹਾ ਜਾਂਚਿਆ ਹੈ ਅਤੇ ਇਹ ਸੱਚਾ ਲੱਗਦਾ ਹੈ:", "waEnd": "ਕਿਰਪਾ ਕਰਕੇ ਜਾਂਚੇ ਬਿਨਾਂ ਅੱਗੇ ਨਾ ਭੇਜੋ। ਤੁਸੀਂ ਇੱਥੇ ਵੀ ਜਾਂਚ ਕਰ ਸਕਦੇ ਹੋ:", "pibNote": "ਸਰਕਾਰੀ ਦਾਅਵਿਆਂ ਲਈ", "noVoice": "ਇਸ ਫੋਨ 'ਤੇ ਇਸ ਭਾਸ਼ਾ ਲਈ ਬੋਲਣ ਵਾਲੀ ਆਵਾਜ਼ ਉਪਲਬਧ ਨਹੀਂ ਹੈ।", "r_kyc": "ਬੈਂਕ/KYC/ਖਾਤਾ ਬੰਦ ਹੋਣ ਦੀ ਧਮਕੀ — ਬੈਂਕ ਕਦੇ ਵੀ ਇਸ ਤਰ੍ਹਾਂ KYC ਨਹੀਂ ਮੰਗਦੇ।", "r_lottery": "ਲੋਟਰੀ/ਇਨਾਮ/KBC ਜਿੱਤਣ ਦਾ ਦਾਅਵਾ — ਇਹ ਬਹੁਤ ਆਮ ਠੱਗੀ ਹੈ। ਅਸਲੀ ਇਨਾਮਾਂ ਲਈ ਕਦੇ ਪੈਸੇ ਨਹੀਂ ਮੰਗੇ ਜਾਂਦੇ।", "r_power": "\"ਅੱਜ ਰਾਤ ਬਿਜਲੀ ਕੱਟ ਦਿੱਤੀ ਜਾਵੇਗੀ\" — ਬਿਜਲੀ ਕੰਪਨੀਆਂ ਨਿੱਜੀ ਨੰਬਰਾਂ ਤੋਂ ਅਜਿਹੇ ਸੁਨੇਹੇ ਨਹੀਂ ਭੇਜਦੀਆਂ।", "r_arrest": "\"Digital arrest\"/CBI/ਪੁਲਿਸ ਵੀਡੀਓ ਕਾਲ — ਪੁਲਿਸ ਕਦੇ ਵੀਡੀਓ ਕਾਲ 'ਤੇ ਗ੍ਰਿਫ਼ਤਾਰ ਨਹੀਂ ਕਰਦੀ ਜਾਂ ਪੈਸੇ ਨਹੀਂ ਮੰਗਦੀ।", "r_otp": "OTP/PIN/CVV ਮੰਗ ਰਿਹਾ ਹੈ — ਇਹ ਕਦੇ ਵੀ ਕਿਸੇ ਨਾਲ ਸਾਂਝਾ ਨਾ ਕਰੋ, 'ਬੈਂਕ' ਨਾਲ ਵੀ ਨਹੀਂ।", "r_chain": "\"10 ਲੋਕਾਂ ਨੂੰ ਅੱਗੇ ਭੇਜੋ\" — ਅਸਲੀ ਖ਼ਬਰਾਂ ਨੂੰ ਅੱਗੇ ਭੇਜਣ ਦੀ ਲੋੜ ਨਹੀਂ ਹੁੰਦੀ।", "r_scheme": "ਮੁਫ਼ਤ ਰੀਚਾਰਜ / ਸਰਕਾਰੀ ਸਕੀਮ ਦਾ ਲਾਲਚ — ਇਹ ਅਕਸਰ ਝੂਠੇ ਹੁੰਦੇ ਹਨ। pib.gov.in 'ਤੇ ਜਾਂਚ ਕਰੋ।", "r_apk": "ਐਪ (.apk) ਡਾਊਨਲੋਡ ਕਰਨ ਲਈ ਕਹਿ ਰਿਹਾ ਹੈ — ਇਹ ਤੁਹਾਡੇ ਫੋਨ ਤੋਂ ਪੈਸੇ ਚੋਰੀ ਕਰ ਸਕਦੀ ਹੈ। ਇਸਨੂੰ ਨਾ ਖੋਲ੍ਹੋ।", "r_link": "ਛੋਟਾ ਜਾਂ ਅਜੀਬ ਲਿੰਕ — ਅਣਜਾਣ ਲਿੰਕਾਂ 'ਤੇ ਕਲਿੱਕ ਨਾ ਕਰੋ।", "r_urgent": "ਜਲਦਬਾਜ਼ੀ ਪੈਦਾ ਕਰਦਾ ਹੈ (\"ਤੁਰੰਤ\", \"ਸਿਰਫ਼ ਅੱਜ\") — ਇਹ ਠੱਗੀ ਦੀ ਇੱਕ ਆਮ ਚਾਲ ਹੈ।", "r_click": "ਤੁਹਾਨੂੰ ਲਿੰਕ 'ਤੇ ਕਲਿੱਕ ਕਰਨ ਲਈ ਕਹਿ ਰਿਹਾ ਹੈ।", "r_money": "ਤੁਹਾਡੇ ਤੋਂ ਪੈਸੇ ਜਾਂ ਫੀਸ ਮੰਗ ਰਿਹਾ ਹੈ।", "r_hoax": "ਇਹ ਇੱਕ ਪੁਰਾਣੀ ਝੂਠੀ ਅਫ਼ਵਾਹ ਲੱਗਦੀ ਹੈ (UNESCO/NASA/WhatsApp ਬੰਦ ਹੋਣਾ, ਆਦਿ)।", "r_health": "ਚਮਤਕਾਰੀ ਇਲਾਜ ਦਾ ਦਾਅਵਾ — ਸਿਹਤ ਦੇ ਮਾਮਲਿਆਂ ਬਾਰੇ ਆਪਣੇ ਡਾਕਟਰ ਤੋਂ ਪੁੱਛੋ।"}, "te": {"sub": "ఇది నిజమా లేక అబద్ధమా?", "tagline": "WhatsApp లో ఏదైనా మెసేజ్ లేదా ఫోటో వచ్చిందా? ఇక్కడ పెట్టండి, అది నిజమో అబద్ధమో మేము చెప్తాం.", "label": "WhatsApp మెసేజ్‌ను ఇక్కడ పేస్ట్ చేయండి", "placeholder": "మెసేజ్‌ను ఇక్కడ పేస్ట్ చేయండి…", "upload": "ఫోటో / స్క్రీన్‌షాట్ అప్‌లోడ్ చేయండి", "check": "తనిఖీ చేయండి", "langBtn": "భాష", "langTitle": "మీ భాషను ఎంచుకోండి", "ocrLoad": "ఫోటో చదివే సాధనం లోడ్ అవుతోంది…", "ocrRead": "ఫోటోలోని అక్షరాలను చదువుతోంది…", "ocrDone": "ఫోటో చదవడం పూర్తయింది ✔", "ocrFail": "ఫోటో సరిగ్గా చదవలేకపోయాం. ఇంటర్నెట్ ఆన్ చేయండి, లేదా మెసేజ్ టైప్ చేయండి.", "ocrNoTextAI": "ఈ ఫోటోలో అక్షరాలు సరిగ్గా లేవు. AI తనిఖీ నేరుగా ఫోటోనే చూస్తుంది.", "ocrNoTextNoAI": "ఈ ఫోటోలో అక్షరాలు సరిగ్గా లేవు. దయచేసి మెసేజ్ టైప్ చేయండి, లేదా స్పష్టమైన ఫోటో అప్‌లోడ్ చేయండి.", "heicAI": "ఈ రకం ఫోటోను ఇక్కడ చదవలేం, కానీ AI తనిఖీ దీన్ని చూస్తుంది.", "heicNoAI": "ఈ రకం ఫోటోను ఇక్కడ చదవలేం. దయచేసి స్క్రీన్‌షాట్ తీసి అప్‌లోడ్ చేయండి.", "checking": "తనిఖీ చేస్తోంది…", "searching": "నిజానిజాలు సరిచూసే వెబ్‌సైట్లలో వెతుకుతోంది…", "empty": "ముందుగా ఒక మెసేజ్ పేస్ట్ చేయండి లేదా ఫోటో అప్‌లోడ్ చేయండి.", "fake": "అబద్ధం / మోసం కావచ్చు", "real": "నిజంలాగే ఉంది", "unsure": "ఖచ్చితంగా తెలియదు — ముందుకి పంపే ముందు సరిచూసుకోండి", "none": "ఇక్కడ తనిఖీ చేయాల్సింది ఏమీ లేదు — ఇది మామూలు మెసేజ్ మాత్రమే", "noSigns": "మోసపూరిత గుర్తులేవీ కనిపించలేదు, కానీ ఈ వార్తను మేము ధృవీకరించలేకపోయాం.", "noTextReason": "ఈ ఫోటోలోని అక్షరాలను మేము చదవలేకపోయాం.", "greetReason": "ఇది శుభాకాంక్షలు లేదా వ్యక్తిగత మెసేజ్ లా ఉంది, తనిఖీ చేయడానికి వార్త ఏమీ లేదు.", "tipTitle": "WhatsApp లో ఈ నమ్మకమైన నిజానిజాల పరిశీలన సాధనాలను అడగండి:", "wa": "దీన్ని ఫ్యామిలీ గ్రూప్‌కి పంపండి", "speak": "గట్టిగా చదివి వినిపించు", "stop": "ఆపు", "newc": "కొత్త మెసేజ్ తనిఖీ చేయండి", "settings": "Settings (AI check)", "setTitle": "AI check (ఐచ్ఛికం)", "setHelp": "కావాలనుకుంటే ఉచిత Google Gemini API key ని పేస్ట్ చేయండి. ఇది మీ ఫోన్/బ్రౌజర్‌లో మాత్రమే ఉంటుంది. key ఉంటే, తనిఖీ కోసం మెసేజ్ Google కి పంపబడుతుంది.", "keyLabel": "Gemini API key", "keyPh": "key ని ఇక్కడ పేస్ట్ చేయండి", "save": "సేవ్ చేయండి", "clearKey": "key ని తీసివేయండి", "close": "మూసివేయి", "keySaved": "✔ Key సేవ్ అయింది. AI check పనిచేస్తోంది.", "keyNone": "Key లేదు. AI check ఆఫ్‌లో ఉంది (మిగతావన్నీ పనిచేస్తాయి).", "disclaimer": "ఇది మీకు సహాయం చేయడానికి మాత్రమే, ఇదే ఆఖరి నిజం కాదు. వైద్య లేదా చట్టపరమైన సలహా కాదు. మిమ్మల్ని గమనించడం లేదా లాగిన్ అవ్వడం ఉండవు — మీ మెసేజ్ మీ ఫోన్‌లోనే ఉంటుంది (ఫోటో చదివే సాధనం మాత్రమే ఇంటర్నెట్ నుండి లోడ్ అవుతుంది; AI check ఆన్‌లో ఉంటేనే మెసేజ్ AI మరియు నిజానిజాలు సరిచూసే వెబ్‌సైట్లకు పంపబడుతుంది).", "aiSays": "AI check", "srcTitle": "సరిచూసిన వార్తా వ్యాసాలు:", "aiErr": "AI check విఫలమైంది (ఇంటర్నెట్ లేదా key సరిచూసుకోండి).", "aiRate": "ప్రస్తుతానికి AI ఉచిత పరిమితి పూర్తయింది, ఒక నిమిషం తర్వాత మళ్ళీ ప్రయత్నించండి.", "aiKey": "Gemini key సరిగ్గా లేదు — Settings చూడండి.", "aiBusy": "AI ప్రస్తుతం బిజీగా ఉంది, దయచేసి కాసేపటి తర్వాత మళ్ళీ ప్రయత్నించండి.", "waFake": "నమస్కారం 🙏 ఈ మెసేజ్ అబద్ధం లేదా మోసం లాగా ఉంది:", "waUnsure": "నమస్కారం 🙏 ఈ మెసేజ్ ఇంకా ధృవీకరించబడలేదు, ముందుకి పంపే ముందు సరిచూసుకోండి:", "waReal": "నమస్కారం 🙏 నేను ఈ మెసేజ్ తనిఖీ చేశాను, ఇది నిజంలాగే ఉంది:", "waEnd": "దయచేసి సరిచూసుకోకుండా ముందుకి పంపకండి. మీరు కూడా ఇక్కడ తనిఖీ చేసుకోవచ్చు:", "pibNote": "ప్రభుత్వ ప్రకటనల కోసం", "noVoice": "ఈ భాషలో చదివి వినిపించే వాయిస్ ఈ ఫోన్‌లో అందుబాటులో లేదు.", "r_kyc": "మీ బ్యాంక్/KYC/ఖాతా నిలిపివేస్తామని బెదిరింపు — బ్యాంకులు ఎప్పుడూ ఈ విధంగా KYC అడగవు.", "r_lottery": "మీకు లాటరీ/బహుమతి/KBC వచ్చింది అని చెప్పడం — ఇది చాలా సాధారణమైన మోసం. నిజమైన బహుమతుల కోసం ఎవరూ డబ్బులు అడగరు.", "r_power": "\"ఈ రాత్రి కరెంట్ తీసేస్తారు\" — విద్యుత్ సంస్థలు వ్యక్తిగత నంబర్ల నుండి ఇలాంటి మెసేజ్‌లు పంపవు.", "r_arrest": "\"డిజిటల్ అరెస్ట్\"/CBI/పోలీస్ వీడియో కాల్ — పోలీసులు ఎప్పుడూ వీడియో కాల్ ద్వారా అరెస్ట్ చేయరు లేదా డబ్బులు అడగరు.", "r_otp": "OTP/PIN/CVV అడగడం — వీటిని ఎవరితోనూ పంచుకోకండి, ఆఖరికి 'బ్యాంక్' అని చెప్పినా సరే.", "r_chain": "\"10 మందికి ఫార్వర్డ్ చేయండి\" — నిజమైన వార్తలను ఇలా అందరికీ ఫార్వర్డ్ చేయాల్సిన అవసరం లేదు.", "r_scheme": "ఉచిత రీఛార్జ్ / ప్రభుత్వ పథకం ఆఫర్ — ఇవి సాధారణంగా అబద్ధాలు. pib.gov.in లో చూడండి.", "r_apk": "ఆప్ (.apk) ఇన్‌స్టాల్ చేయమని అడగడం — ఇది మీ ఫోన్ నుండి డబ్బులు దొంగిలించగలదు. దీన్ని తెరవకండి.", "r_link": "చిన్నది లేదా వింతైన లింక్ — తెలియని లింక్‌లపై నొక్కకండి.", "r_urgent": "తొందర పెట్టడం (\"వెంటనే\", \"ఈ రోజే చివరిది\") — ఇది మోసం చేసేవారి సాధారణ ఉపాయం.", "r_click": "లింక్ పై నొక్కమని అడుగుతోంది.", "r_money": "డబ్బులు లేదా రుసుము పంపమని అడుగుతోంది.", "r_hoax": "ఇది పాత పుకారు లా ఉంది (UNESCO/NASA/WhatsApp మూసివేస్తారు వంటివి).", "r_health": "అద్భుతమైన నివారణ/మందు అని చెప్పడం — ఆరోగ్య విషయాల గురించి మీ డాక్టర్‌ని అడగండి."}, "ta": {"sub": "இது நிஜமா அல்லது பொய்யா?", "tagline": "WhatsApp-இல் ஏதேனும் மெசேஜ் அல்லது போட்டோ வந்ததா? அதை இங்கே போடுங்கள், அது நிஜமா இல்லை பொய்யா என்று பார்த்து சொல்கிறோம்.", "label": "வந்த WhatsApp மெசேஜை இங்கே ஒட்டுங்கள்", "placeholder": "மெசேஜை இங்கே ஒட்டுங்கள்…", "upload": "போட்டோ / ஸ்கிரீன்ஷாட் பதிவேற்றவும்", "check": "சரிபார்க்கவும்", "langBtn": "மொழி", "langTitle": "உங்கள் மொழியைத் தேர்ந்தெடுக்கவும்", "ocrLoad": "போட்டோ படிக்கும் கருவி தயாராகிறது…", "ocrRead": "போட்டோவில் உள்ள எழுத்துக்களைப் படிக்கிறது…", "ocrDone": "போட்டோ படிக்கப்பட்டது ✔", "ocrFail": "போட்டோவை படிக்க முடியவில்லை. இன்டர்நெட்டை ஆன் செய்யவும், அல்லது மெசேஜை டைப் செய்யவும்.", "ocrNoTextAI": "இந்த போட்டோவில் தெளிவான எழுத்துக்கள் எதுவும் இல்லை. AI சோதனை இந்த போட்டோவையே நேரடியாகச் சரிபார்க்கும்.", "ocrNoTextNoAI": "இந்த போட்டோவில் தெளிவான எழுத்துக்கள் எதுவும் இல்லை. தயவுசெய்து மெசேஜை டைப் செய்யவும், அல்லது தெளிவான போட்டோவை பதிவேற்றவும்.", "heicAI": "இந்த வகை போட்டோவை இங்கு படிக்க முடியாது, ஆனால் AI சோதனை இதை சரிபார்க்கும்.", "heicNoAI": "இந்த வகை போட்டோவை இங்கு படிக்க முடியாது. தயவுசெய்து இதை ஒரு ஸ்கிரீன்ஷாட் எடுத்து பதிவேற்றவும்.", "checking": "சரிபார்க்கிறது…", "searching": "உண்மை அறியும் இணையதளங்களில் தேடுகிறது…", "empty": "முதலில் ஒரு மெசேஜை ஒட்டுங்கள் அல்லது போட்டோவை பதிவேற்றுங்கள்.", "fake": "பொய்யான செய்தி / ஏமாற்று வேலை போல தெரிகிறது", "real": "உண்மையான செய்தி போல தெரிகிறது", "unsure": "நிச்சயமாக தெரியவில்லை — யாருக்கும் அனுப்பும் முன் சரிபார்க்கவும்", "none": "இங்கே சரிபார்க்க எதுவும் இல்லை — இது ஒரு சாதாரண மெசேஜ் தான்", "noSigns": "ஏமாற்று வேலைக்கான அறிகுறிகள் எதுவும் இல்லை, ஆனால் இந்த செய்தியை எங்களால் உறுதிப்படுத்த முடியவில்லை.", "noTextReason": "இந்த போட்டோவில் உள்ள எழுத்துக்களை எங்களால் படிக்க முடியவில்லை.", "greetReason": "இது ஒரு வாழ்த்து அல்லது சொந்த மெசேஜ் போல இருக்கிறது, இதில் சரிபார்க்க செய்தி எதுவும் இல்லை.", "tipTitle": "WhatsApp-இல் இந்த நம்பிக்கையான உண்மை அறியும் நபர்களிடம் கேளுங்கள்:", "wa": "இதை குடும்ப குரூப்பிற்கு அனுப்புங்கள்", "speak": "சத்தமாகப் படி", "stop": "நிறுத்து", "newc": "புதிய மெசேஜைச் சரிபார்க்கவும்", "settings": "அமைப்புகள் (AI சோதனை)", "setTitle": "AI சோதனை (தேவைப்பட்டால்)", "setHelp": "விருப்பமிருந்தால் இலவச Google Gemini API key-ஐ இங்கே ஒட்டுங்கள். இது இந்த போனில் மட்டுமே இருக்கும். இந்த key இருந்தால், மெசேஜ் சரிபார்ப்பிற்காக Google-க்கு அனுப்பப்படும்.", "keyLabel": "Gemini API key", "keyPh": "Key-ஐ இங்கே ஒட்டுங்கள்", "save": "சேமி", "clearKey": "Key-ஐ நீக்கு", "close": "மூடு", "keySaved": "✔ Key சேமிக்கப்பட்டது. AI சோதனை ஆன் செய்யப்பட்டுள்ளது.", "keyNone": "Key இல்லை. AI சோதனை ஆஃப் செய்யப்பட்டுள்ளது (மற்றவை அனைத்தும் வேலை செய்யும்).", "disclaimer": "இது உதவி செய்வதற்கான கருவி மட்டுமே, இறுதி முடிவு அல்ல. மருத்துவ அல்லது சட்ட ஆலோசனைகள் இதில் இல்லை. கண்காணிப்போ, லாகின்னோ கிடையாது — உங்கள் மெசேஜ் உங்கள் போனிலேயே இருக்கும் (போட்டோ படிக்கும் கருவி மட்டுமே இன்டர்நெட்டிலிருந்து இயங்கும்; AI சோதனை ஆன் செய்யப்பட்டிருந்தால் மட்டுமே மெசேஜ் AI மற்றும் உண்மை அறியும் தளங்களுக்கு அனுப்பப்படும்).", "aiSays": "AI சோதனை", "srcTitle": "உண்மை அறியும் கட்டுரைகள்:", "aiErr": "AI சோதனை தோல்வியடைந்தது (இன்டர்நெட் அல்லது key-ஐ சரிபார்க்கவும்).", "aiRate": "AI இலவச வரம்பு முடிந்தது, ஒரு நிமிடம் கழித்து மீண்டும் முயலவும்.", "aiKey": "Gemini key தவறாக உள்ளது — Settings-இல் சரிபார்க்கவும்.", "aiBusy": "AI இப்போது பிஸியாக உள்ளது, சிறிது நேரம் கழித்து மீண்டும் முயலவும்.", "waFake": "வணக்கம் 🙏 இந்த மெசேஜ் பொய்யானது அல்லது ஏமாற்று வேலை போல தெரிகிறது:", "waUnsure": "வணக்கம் 🙏 இந்த மெசேஜ் உறுதி செய்யப்படவில்லை, மற்றவருக்கு அனுப்பும் முன் சரிபார்க்கவும்:", "waReal": "வணக்கம் 🙏 நான் இந்த மெசேஜை சரிபார்த்தேன், இது உண்மையான செய்தி போல தெரிகிறது:", "waEnd": "தயவுசெய்து சரிபார்க்காமல் யாருக்கும் அனுப்ப வேண்டாம். நீங்களும் இங்கே சரிபார்க்கலாம்:", "pibNote": "அரசு தகவல்களுக்கு", "noVoice": "இந்த மொழியில் வாசித்து காட்டும் குரல் இந்த போனில் இல்லை.", "r_kyc": "உங்கள் வங்கி/KYC/கணக்கு முடக்கப்படும் என்ற மிரட்டல் — வங்கிகள் ஒருபோதும் இந்த வழியில் KYC கேட்காது.", "r_lottery": "லாட்டரி/பரிசு/KBC வென்றதாகக் கூறும் செய்திகள் — இது மிகவும் பொதுவான ஏமாற்று வேலை. உண்மையான பரிசுகளுக்கு பணம் கட்ட தேவையில்லை.", "r_power": "\"இன்று இரவு மின்சாரம் துண்டிக்கப்படும்\" — மின்வாரியம் சொந்த போன் நம்பரிலிருந்து இதுபோன்ற மெசேஜ் அனுப்பாது.", "r_arrest": "\"டிஜிட்டல் கைது\"/CBI/போலீஸ் வீடியோ கால் — போலீஸ் ஒருபோதும் வீடியோ காலில் கைது செய்யவோ பணம் கேட்கவோ செய்யாது.", "r_otp": "OTP/PIN/CVV கேட்கிறது — இவற்றை யாரோடும் பகிர வேண்டாம், 'வங்கி அதிகாரி' கேட்டாலும் தர வேண்டாம்.", "r_chain": "\"10 பேருக்கு ஃபார்வர்ட் செய்யுங்கள்\" — உண்மையான செய்திக்கு இதுபோன்ற தொடர் ஃபார்வர்ட் தேவைப்படாது.", "r_scheme": "இலவச ரீசார்ஜ் / அரசு திட்ட ஆஃபர் — இவை பெரும்பாலும் பொய்யானவை. pib.gov.in-இல் சரிபார்க்கவும்.", "r_apk": "ஒரு செயலியை (.apk) இன்ஸ்டால் செய்ய சொல்கிறது — இது உங்கள் போனில் இருந்து பணத்தை திருடக்கூடும். அதை திறக்க வேண்டாம்.", "r_link": "குறுகிய அல்லது தெரியாத லிங்க் — தெரியாத லிங்குகளை தொடாதீர்கள்.", "r_urgent": "அவசரப்படுத்துகிறது (\"உடனே செய்யுங்கள்\", \"இன்று மட்டுமே\") — இது ஏமாற்றுபவர்களின் தந்திரம்.", "r_click": "லிங்கை கிளிக் செய்ய சொல்கிறது.", "r_money": "பணம் அல்லது கட்டணம் அனுப்பச் சொல்கிறது.", "r_hoax": "இது பல பழைய வதந்திகள் போல தெரிகிறது (UNESCO/NASA சான்றிதழ், WhatsApp மூடப்படுகிறது போன்றவை).", "r_health": "அதிசய வைத்தியம் என கூறுகிறது — ஆரோக்கியம் சம்பந்தப்பட்ட விஷயங்களுக்கு உங்கள் டாக்டரிடம் கேளுங்கள்."}, "gu": {"sub": "સાચું છે કે ખોટું?", "tagline": "WhatsApp પર કોઈ મેસેજ કે ફોટો આવ્યો છે? અહીં નાખો અને અમે તમને કહીશું કે તે સાચો છે કે ખોટો.", "label": "WhatsApp નો મેસેજ અહીં ચોંટાડો (પેસ્ટ કરો)", "placeholder": "મેસેજ અહીં નાખો…", "upload": "ફોટો / સ્ક્રીનશોટ મૂકો", "check": "તપાસો", "langBtn": "ભાષા", "langTitle": "તમારી ભાષા પસંદ કરો", "ocrLoad": "ફોટો વંચાઈ રહ્યો છે…", "ocrRead": "ફોટોમાંથી લખાણ વંચાઈ રહ્યું છે…", "ocrDone": "ફોટો વંચાઈ ગયો ✔", "ocrFail": "ફોટો વંચાયો નહીં. ઇન્ટરનેટ ચાલુ કરો અથવા મેસેજ લખો.", "ocrNoTextAI": "આ ફોટામાં કોઈ ચોખ્ખું લખાણ નથી મળ્યું. AI તપાસ ફોટાને જાતે જોશે.", "ocrNoTextNoAI": "આ ફોટામાં કોઈ ચોખ્ખું લખાણ નથી મળ્યું. કૃપા કરીને મેસેજ લખો અથવા બીજો ચોખ્ખો ફોટો મૂકો.", "heicAI": "આ પ્રકારનો ફોટો અહીં વંચાતો નથી, પણ AI તપાસ તેને જોશે.", "heicNoAI": "આ પ્રકારનો ફોટો અહીં વંચાતો નથી. કૃપા કરીને સ્ક્રીનશોટ લઈને તે મૂકો.", "checking": "તપાસી રહ્યા છીએ…", "searching": "સાચી માહિતી તપાસવાની વેબસાઇટ્સ શોધી રહ્યા છીએ…", "empty": "પહેલાં કોઈ મેસેજ નાખો અથવા ફોટો મૂકો.", "fake": "સંભવિત ખોટું / ફ્રોડ", "real": "સાચું લાગે છે", "unsure": "ખાતરી નથી — બીજાને મોકલતા પહેલાં તપાસો", "none": "અહીં તપાસવા જેવું કંઈ નથી — આ સાદો મેસેજ છે", "noSigns": "કોઈ ઠગાઈના લક્ષણો નથી મળ્યા, પણ અમે આ ખબરની પુષ્ટિ નથી કરી શક્યા.", "noTextReason": "અમને આ ફોટામાં કોઈ લખાણ ના મળ્યું.", "greetReason": "આ કોઈ શુભેચ્છા કે અંગત મેસેજ જેવું લાગે છે, જેમાં તપાસવા જેવી કોઈ ખબર નથી.", "tipTitle": "WhatsApp પર આ ભરોસાપાત્ર લોકોને પૂછો:", "wa": "આને પરિવારના ગ્રુપમાં મોકલો", "speak": "મોટેથી વાંચો", "stop": "બંધ કરો", "newc": "નવો મેસેજ તપાસો", "settings": "સેટિંગ્સ (AI તપાસ)", "setTitle": "AI તપાસ (મરજી મુજબ)", "setHelp": "તમારી પાસે હોય તો ફ્રી Google Gemini API key અહીં નાખો. તે ફક્ત તમારા ફોન કે બ્રાઉઝરમાં જ રહે છે. આ કી નાખવાથી મેસેજ તપાસવા માટે Google ને મોકલવામાં આવે છે.", "keyLabel": "Gemini API key", "keyPh": "કી અહીં નાખો", "save": "સેવ કરો", "clearKey": "કી કાઢી નાખો", "close": "બંધ કરો", "keySaved": "✔ કી સેવ થઈ ગઈ. AI તપાસ ચાલુ છે.", "keyNone": "કોઈ કી નથી. AI તપાસ બંધ છે (બાકી બધું કામ કરશે).", "disclaimer": "આ માત્ર મદદ માટે છે, આને આખરી સત્ય ના માનવું. ડૉક્ટર કે વકીલની સલાહ નથી. કોઈ ડેટા ચોરાતો નથી, લૉગિન નથી કરવું — તમારો મેસેજ તમારા ફોનમાં જ રહે છે (ફક્ત ફોટો વાંચવા માટે ઇન્ટરનેટનો ઉપયોગ થાય છે; જો AI તપાસ ચાલુ હોય તો જ મેસેજ AI અને સાચી માહિતી તપાસતી વેબસાઇટ્સને મોકલવામાં આવે છે).", "aiSays": "AI તપાસ", "srcTitle": "માહિતી ચકાસણીના લેખો:", "aiErr": "AI તપાસ થઈ શકી નહીં (ઇન્ટરનેટ અથવા કી ચકાસો).", "aiRate": "હમણાં માટે AI ની મર્યાદા પૂરી થઈ ગઈ છે, થોડી મિનિટ પછી ફરી પ્રયાસ કરો.", "aiKey": "Gemini કી સાચી નથી — સેટિંગ્સ તપાસો.", "aiBusy": "AI અત્યારે વ્યસ્ત છે, કૃપા કરીને થોડીવાર પછી ફરી પ્રયાસ કરો.", "waFake": "નમસ્તે 🙏 આ મેસેજ ખોટો કે ઠગાઈ જેવો લાગે છે:", "waUnsure": "નમસ્તે 🙏 આ મેસેજની ખાતરી નથી થઈ, બીજાને મોકલતા પહેલાં તપાસી લો:", "waReal": "નમસ્તે 🙏 મેં આ મેસેજ તપાસ્યો છે અને તે સાચો લાગે છે:", "waEnd": "તપાસ્યા વગર આગળ મોકલશો નહીં. તમે પણ અહીં તપાસ કરી શકો છો:", "pibNote": "સરકારી દાવાઓ માટે", "noVoice": "આ ફોનમાં આ ભાષાનો અવાજ ઉપલબ્ધ નથી.", "r_kyc": "તમારી બેંક/KYC/ખાતું બ્લોક થઈ જવાની ધમકી — બેંકો ક્યારેય આવી રીતે KYC નથી માંગતી.", "r_lottery": "લોટરી/ઇનામ/KBC જીત્યા હોવાનો દાવો — ખૂબ જ સામાન્ય ઠગાઈ. સાચા ઇનામ માટે ક્યારેય પૈસા નથી માંગવામાં આવતા.", "r_power": "\"આજે રાત્રે વીજળી કાપી નાખવામાં આવશે\" — વીજળી કંપનીઓ આવા મેસેજ અંગત નંબરથી નથી મોકલતી.", "r_arrest": "\"ડિજિટલ અરેસ્ટ\"/CBI/પોલીસનો વિડિયો કૉલ — પોલીસ ક્યારેય વિડિયો કૉલ પર ધરપકડ નથી કરતી કે પૈસા નથી માંગતી.", "r_otp": "OTP/PIN/CVV માંગે છે — આ ક્યારેય કોઈને ન આપવું, 'બેંક' વાળાને પણ નહીં.", "r_chain": "\"૧૦ લોકોને મોકલો\" — સાચી ખબરોને આગળ મોકલવાની જરૂર નથી પડતી.", "r_scheme": "ફ્રી રિચાર્જ / સરકારી યોજનાની ઓફર — આ બધું મોટે ભાગે ખોટું હોય છે. pib.gov.in પર તપાસ કરો.", "r_apk": "એપ (.apk) ઇન્સ્ટોલ કરવાનું કહે છે — આ તમારા ફોનમાંથી પૈસા ચોરી શકે છે. તેને ખોલશો નહીં.", "r_link": "ટૂંકી કે વિચિત્ર લિંક — જે લિંક ઓળખતા ના હોવ તેને ક્યારેય દબાવશો નહીં.", "r_urgent": "જલ્દી કરવાનું કહે છે (\"તરત જ\", \"આજે જ\") — ઠગાઈ કરવાની આ જૂની રીત છે.", "r_click": "કોઈ લિંક પર ક્લિક કરવાનું કહે છે.", "r_money": "પૈસા કે ફી મોકલવાનું કહે છે.", "r_hoax": "જાણીતી જૂની અફવા જેવું લાગે છે (UNESCO/NASA/WhatsApp બંધ થવું, વગેરે).", "r_health": "ચમત્કારિક ઇલાજનો દાવો — સ્વાસ્થ્ય બાબતે તમારા પોતાના ડૉક્ટરને પૂછો."}, "kn": {"sub": "ಇದು ನಿಜವೇ ಅಥವಾ ಸುಳ್ಳಾ?", "tagline": "WhatsApp ನಲ್ಲಿ ಸಂದೇಶ ಅಥವಾ ಫೋಟೋ ಬಂದಿದೆಯಾ? ಇಲ್ಲಿ ಹಾಕಿ, ಅದು ನಿಜವೋ ಸುಳ್ಳೋ ಎಂದು ನಾವು ಹೇಳುತ್ತೇವೆ.", "label": "WhatsApp ಸಂದೇಶವನ್ನು ಇಲ್ಲಿ ಹಾಕಿ", "placeholder": "ಸಂದೇಶವನ್ನು ಇಲ್ಲಿ ಹಾಕಿ…", "upload": "ಫೋಟೋ / ಸ್ಕ್ರೀನ್‌ಶಾಟ್ ಹಾಕಿ", "check": "ಪರೀಕ್ಷಿಸಿ", "langBtn": "ಭಾಷೆ", "langTitle": "ನಿಮ್ಮ ಭಾಷೆಯನ್ನು ಆಯ್ಕೆ ಮಾಡಿ", "ocrLoad": "ಫೋಟೋ ಓದುವ ಸಾಧನ ಲೋಡ್ ಆಗುತ್ತಿದೆ…", "ocrRead": "ಫೋಟೋದಲ್ಲಿರುವ ಅಕ್ಷರಗಳನ್ನು ಓದಲಾಗುತ್ತಿದೆ…", "ocrDone": "ಫೋಟೋ ಓದಿಯಾಗಿದೆ ✔", "ocrFail": "ಫೋಟೋ ಓದಲು ಆಗಲಿಲ್ಲ. ಇಂಟರ್ನೆಟ್ ಆನ್ ಮಾಡಿ ಅಥವಾ ಸಂದೇಶವನ್ನು ಟೈಪ್ ಮಾಡಿ.", "ocrNoTextAI": "ಈ ಫೋಟೋದಲ್ಲಿ ಸ್ಪಷ್ಟವಾದ ಅಕ್ಷರಗಳು ಸಿಗಲಿಲ್ಲ. AI ಇದನ್ನು ಸ್ವತಃ ಫೋಟೋ ನೋಡಿ ಪರಿಶೀಲಿಸುತ್ತದೆ.", "ocrNoTextNoAI": "ಈ ಫೋಟೋದಲ್ಲಿ ಸ್ಪಷ್ಟವಾದ ಅಕ್ಷರಗಳು ಸಿಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಸಂದೇಶವನ್ನು ಟೈಪ್ ಮಾಡಿ ಅಥವಾ ಸ್ಪಷ್ಟವಾದ ಫೋಟೋ ಹಾಕಿ.", "heicAI": "ಈ ರೀತಿಯ ಫೋಟೋವನ್ನು ಇಲ್ಲಿ ಓದಲು ಆಗುವುದಿಲ್ಲ, ಆದರೆ AI ಇದನ್ನು ಪರಿಶೀಲಿಸುತ್ತದೆ.", "heicNoAI": "ಈ ರೀತಿಯ ಫೋಟೋವನ್ನು ಇಲ್ಲಿ ಓದಲು ಆಗುವುದಿಲ್ಲ. ದಯವಿಟ್ಟು ಇದರ ಸ್ಕ್ರೀನ್‌ಶಾಟ್ ತೆಗೆದು ಹಾಕಿ.", "checking": "ಪರಿಶೀಲಿಸಲಾಗುತ್ತಿದೆ…", "searching": "ನಿಜ-ಸುಳ್ಳು ಪರಿಶೀಲಿಸುವ ವೆಬ್‌ಸೈಟ್‌ಗಳಲ್ಲಿ ಹುಡುಕಲಾಗುತ್ತಿದೆ…", "empty": "ಮೊದಲು ಸಂದೇಶ ಹಾಕಿ ಅಥವಾ ಫೋಟೋ ಅಪ್‌ಲೋಡ್ ಮಾಡಿ.", "fake": "ಇದು ಸುಳ್ಳು / ಮೋಸ ಇರಬಹುದು", "real": "ಇದು ನಿಜ ಅನಿಸುತ್ತಿದೆ", "unsure": "ಖಚಿತವಿಲ್ಲ — ಬೇರೆಯವರಿಗೆ ಕಳುಹಿಸುವ ಮುಂಚೆ ಪರಿಶೀಲಿಸಿ", "none": "ಇಲ್ಲಿ ಪರಿಶೀಲಿಸಲು ಏನೂ ಇಲ್ಲ — ಇದು ಸಾಮಾನ್ಯ ಸಂದೇಶ", "noSigns": "ಯಾವುದೇ ಮೋಸದ ಲಕ್ಷಣಗಳು ಕಂಡುಬಂದಿಲ್ಲ, ಆದರೆ ಈ ಸುದ್ದಿಯ ಖಚಿತತೆ ತಿಳಿಯುತ್ತಿಲ್ಲ.", "noTextReason": "ಈ ಫೋಟೋದಲ್ಲಿ ಯಾವುದೇ ಅಕ್ಷರಗಳು ನಮಗೆ ಓದಲಾಗಲಿಲ್ಲ.", "greetReason": "ಇದು ಶುಭಾಶಯ ಅಥವಾ ವೈಯಕ್ತಿಕ ಸಂದೇಶದಂತಿದೆ, ಪರಿಶೀಲಿಸಲು ಯಾವುದೇ ಸುದ್ದಿ ಇಲ್ಲ.", "tipTitle": "WhatsApp ನಲ್ಲಿ ಈ ನಂಬಿಕಸ್ಥರನ್ನು ಕೇಳಿ:", "wa": "ಇದನ್ನು ಕುಟುಂಬದ ಗ್ರೂಪಿಗೆ ಕಳುಹಿಸಿ", "speak": "ಗಟ್ಟಿಯಾಗಿ ಓದಿ", "stop": "ನಿಲ್ಲಿಸಿ", "newc": "ಹೊಸ ಸಂದೇಶ ಪರಿಶೀಲಿಸಿ", "settings": "ಸೆಟ್ಟಿಂಗ್ಸ್ (AI ಪರಿಶೀಲನೆ)", "setTitle": "AI ಪರಿಶೀಲನೆ (ಕಡ್ಡಾಯವಲ್ಲ)", "setHelp": "ಉಚಿತ Google Gemini API ಕೀ ಅನ್ನು ಇಲ್ಲಿ ಹಾಕಬಹುದು. ಇದು ನಿಮ್ಮ ಫೋನ್/ಬ್ರೌಸರ್‌ನಲ್ಲಿ ಮಾತ್ರ ಇರುತ್ತದೆ. ಇದನ್ನು ಹಾಕಿದರೆ, ಪರಿಶೀಲನೆಗಾಗಿ ಸಂದೇಶವು Google ಗೆ ಹೋಗುತ್ತದೆ.", "keyLabel": "Gemini API ಕೀ", "keyPh": "ಕೀಯನ್ನು ಇಲ್ಲಿ ಹಾಕಿ", "save": "ಉಳಿಸಿ", "clearKey": "ಕೀ ತೆಗೆದುಹಾಕಿ", "close": "ಮುಚ್ಚಿ", "keySaved": "✔ ಕೀ ಉಳಿಸಲಾಗಿದೆ. AI ಪರಿಶೀಲನೆ ಆನ್ ಆಗಿದೆ.", "keyNone": "ಕೀ ಇಲ್ಲ. AI ಪರಿಶೀಲನೆ ಆಫ್ ಆಗಿದೆ (ಉಳಿದವೆಲ್ಲವೂ ಕೆಲಸ ಮಾಡುತ್ತವೆ).", "disclaimer": "ಇದು ಕೇವಲ ಸಹಾಯಕ್ಕೆ, ಅಂತಿಮ ತೀರ್ಪಲ್ಲ. ಇದು ವೈದ್ಯಕೀಯ ಅಥವಾ ಕಾನೂನು ಸಲಹೆಯಲ್ಲ. ಯಾವುದೇ ಟ್ರ್ಯಾಕಿಂಗ್ ಅಥವಾ ಲಾಗಿನ್ ಇಲ್ಲ — ನಿಮ್ಮ ಸಂದೇಶ ನಿಮ್ಮ ಫೋನ್‌ನಲ್ಲೇ ಇರುತ್ತದೆ (ಫೋಟೋ ರೀಡರ್ ಮಾತ್ರ ಇಂಟರ್ನೆಟ್‌ನಿಂದ ಕೆಲಸ ಮಾಡುತ್ತದೆ; AI ಪರಿಶೀಲನೆ ಆನ್ ಇದ್ದರೆ ಮಾತ್ರ ಸಂದೇಶವು AI ಮತ್ತು ಫ್ಯಾಕ್ಟ್-ಚೆಕ್ ವೆಬ್‌ಸೈಟ್‌ಗಳಿಗೆ ಹೋಗುತ್ತದೆ).", "aiSays": "AI ಪರಿಶೀಲನೆ", "srcTitle": "ಸುದ್ದಿ ಪರಿಶೀಲನಾ ಲೇಖನಗಳು:", "aiErr": "AI ಪರಿಶೀಲನೆ ವಿಫಲವಾಗಿದೆ (ಇಂಟರ್ನೆಟ್ ಅಥವಾ ಕೀ ಪರಿಶೀಲಿಸಿ).", "aiRate": "ಸದ್ಯಕ್ಕೆ AI ಉಚಿತ ಮಿತಿ ಮುಗಿದಿದೆ, ಒಂದು ನಿಮಿಷದ ನಂತರ ಪ್ರಯತ್ನಿಸಿ.", "aiKey": "Gemini ಕೀ ಸರಿಯಾಗಿಲ್ಲ — ಸೆಟ್ಟಿಂಗ್ಸ್ ಪರಿಶೀಲಿಸಿ.", "aiBusy": "ಸದ್ಯಕ್ಕೆ AI ಬ್ಯುಸಿಯಾಗಿದೆ, ದಯವಿಟ್ಟು ಸ್ವಲ್ಪ ಸಮಯದ ನಂತರ ಪ್ರಯತ್ನಿಸಿ.", "waFake": "ನಮಸ್ಕಾರ 🙏 ಈ ಸಂದೇಶವು ಸುಳ್ಳು ಅಥವಾ ಮೋಸದಂತೆ ಕಾಣುತ್ತಿದೆ:", "waUnsure": "ನಮಸ್ಕಾರ 🙏 ಈ ಸಂದೇಶವು ಖಚಿತವಾಗಿಲ್ಲ, ದಯವಿಟ್ಟು ಬೇರೆಯವರಿಗೆ ಕಳುಹಿಸುವ ಮುಂಚೆ ಪರಿಶೀಲಿಸಿ:", "waReal": "ನಮಸ್ಕಾರ 🙏 ನಾನು ಈ ಸಂದೇಶವನ್ನು ಪರಿಶೀಲಿಸಿದ್ದೇನೆ, ಇದು ನಿಜವೆನಿಸುತ್ತದೆ:", "waEnd": "ಪರಿಶೀಲಿಸದೆ ದಯವಿಟ್ಟು ಯಾರಿಗೂ ಕಳುಹಿಸಬೇಡಿ. ನೀವೂ ಇಲ್ಲಿ ಪರಿಶೀಲಿಸಬಹುದು:", "pibNote": "ಸರ್ಕಾರಿ ಸುದ್ದಿಗಳಿಗಾಗಿ", "noVoice": "ಈ ಭಾಷೆಯಲ್ಲಿ ಓದಿಹೇಳುವ ಧ್ವನಿ ಈ ಫೋನ್‌ನಲ್ಲಿ ಲಭ್ಯವಿಲ್ಲ.", "r_kyc": "ನಿಮ್ಮ ಬ್ಯಾಂಕ್/KYC/ಖಾತೆ ಬ್ಲಾಕ್ ಆಗುತ್ತದೆ ಎಂಬ ಬೆದರಿಕೆ — ಬ್ಯಾಂಕ್‌ಗಳು ಈ ರೀತಿ KYC ಕೇಳುವುದಿಲ್ಲ.", "r_lottery": "ಲಾಟರಿ/ಬಹುಮಾನ/KBC ಗೆದ್ದಿದ್ದೀರಿ ಎನ್ನುವುದು — ಇದು ಬಹಳ ಸಾಮಾನ್ಯ ಮೋಸ. ನಿಜವಾದ ಬಹುಮಾನಕ್ಕೆ ಯಾರೂ ಹಣ ಕೇಳುವುದಿಲ್ಲ.", "r_power": "\"ಇವತ್ತು ರಾತ್ರಿ ಕರೆಂಟ್ ಕಟ್ ಆಗುತ್ತದೆ\" — ವಿದ್ಯುತ್ ಇಲಾಖೆ ಇಂತಹ ಸಂದೇಶಗಳನ್ನು ಖಾಸಗಿ ನಂಬರ್‌ನಿಂದ ಕಳುಹಿಸುವುದಿಲ್ಲ.", "r_arrest": "\"ಡಿಜಿಟಲ್ ಅರೆಸ್ಟ್\" / CBI / ಪೊಲೀಸ್ ವೀಡಿಯೊ ಕರೆ — ಪೊಲೀಸರು ವೀಡಿಯೊ ಕಾಲಿನಲ್ಲಿ ಬಂಧಿಸುವುದಿಲ್ಲ ಅಥವಾ ಹಣ ಕೇಳುವುದಿಲ್ಲ.", "r_otp": "OTP/PIN/CVV ಕೇಳುತ್ತಾರೆ — ಇವುಗಳನ್ನು ಯಾರಿಗೂ ಹೇಳಬೇಡಿ, 'ಬ್ಯಾಂಕ್' ಎನ್ನುವವರಿಗೂ ಕೂಡ.", "r_chain": "\"10 ಜನರಿಗೆ ಕಳುಹಿಸಿ\" — ನಿಜವಾದ ಸುದ್ದಿಯನ್ನು ಹೀಗೆ ಸರಪಳಿಯಂತೆ ಹಂಚುವ ಅಗತ್ಯವಿಲ್ಲ.", "r_scheme": "ಉಚಿತ ರೀಚಾರ್ಜ್ / ಸರ್ಕಾರದ ಯೋಜನೆಗಳ ಆಫರ್ — ಇವುಗಳು ಸಾಮಾನ್ಯವಾಗಿ ಸುಳ್ಳಾಗಿರುತ್ತವೆ. pib.gov.in ನಲ್ಲಿ ಪರಿಶೀಲಿಸಿ.", "r_apk": "ಆ್ಯಪ್ (.apk) ಇನ್‌ಸ್ಟಾಲ್ ಮಾಡಲು ಹೇಳುತ್ತದೆ — ಇದು ನಿಮ್ಮ ಫೋನ್‌ನಲ್ಲಿರುವ ಹಣ ಕದಿಯಬಹುದು. ಅದನ್ನು ತೆರೆಯಬೇಡಿ.", "r_link": "ಚಿಕ್ಕದಾದ ಅಥವಾ ವಿಚಿತ್ರವಾದ ಲಿಂಕ್ — ನಿಮಗೆ ಗೊತ್ತಿಲ್ಲದ ಲಿಂಕ್‌ಗಳನ್ನು ಒತ್ತಬೇಡಿ.", "r_urgent": "ತುರ್ತು ಪರಿಸ್ಥಿತಿ ಸೃಷ್ಟಿಸುವುದು (\"ತಕ್ಷಣವೇ\", \"ಇಂದೇ ಕೊನೆ\") — ಇದು ಮೋಸ ಮಾಡುವವರ ಸಾಮಾನ್ಯ ದಾರಿ.", "r_click": "ಲಿಂಕ್ ಮೇಲೆ ಕ್ಲಿಕ್ ಮಾಡಲು ಹೇಳುತ್ತದೆ.", "r_money": "ಹಣ ಅಥವಾ ಶುಲ್ಕ ಕಳುಹಿಸಲು ಕೇಳುತ್ತದೆ.", "r_hoax": "ಇದು ಹಳೆಯ, ಎಲ್ಲರಿಗೂ ಗೊತ್ತಿರುವ ಸುಳ್ಳು ಸುದ್ದಿಯಂತಿದೆ (UNESCO/NASA/WhatsApp ಬಂದ್ ಆಗಲಿದೆ ಇತ್ಯಾದಿ).", "r_health": "ಅದ್ಭುತ ಚಿಕಿತ್ಸೆ ಎಂಬ ದಾವೆ — ಆರೋಗ್ಯದ ಬಗ್ಗೆ ನಿಮ್ಮ ಡಾಕ್ಟರ್ ಬಳಿಯೇ ಕೇಳಿ."}};
+for(const c of Object.keys(LANGS)) S[c] = Object.assign({}, S.en, S[c]||{}); // any missing string falls back to English
+
+/* ============================ RULES =================================== */
+const RULES = [
+  {id:"kyc", w:3, re:/(kyc|के\s?वाई\s?सी|केवाईसी|pan\s?card|पैन|aadhaa?r|आधार|account|a\/c|खाता|अकाउंट|bank|बैंक|sim|सिम)[^\n]{0,70}(block|suspend|deactivat|expire|band ho|बंद|ब्लॉक|निलंबित|फ्रीज|freeze)/i},
+  {id:"kyc", w:3, re:/(update|अपडेट|complete|पूरा)[^\n]{0,30}(kyc|केवाईसी|के\s?वाई\s?सी)|(kyc|केवाईसी)[^\n]{0,30}(update|अपडेट|pending|लंबित)/i},
+  {id:"lottery", w:3, re:/lottery|lucky\s?draw|you\s?(have\s)?won|won\s?(a|rs|₹)|prize\s?money|cash\s?prize|kbc|kaun\s?banega|लॉटरी|लकी\s?ड्रा|इनाम|ईनाम|जीते\s?हैं|जीता\s?है|केबीसी|कौन\s?बनेगा|करोड़पति\s?(से|की)?\s?(लॉटरी|इनाम)/i},
+  {id:"power", w:3, re:/(electricity|electric|power|bijli|बिजली|विद्युत)[^\n]{0,90}(disconnect|cut|kat\s?ja|कट|काट|बंद|disconnected)/i},
+  {id:"arrest", w:3, re:/digital\s?arrest|डिजिटल\s?(अरेस्ट|गिरफ्तार)|arrest\s?warrant|गिरफ्तारी\s?वारंट|\bcbi\b|सीबीआई|narcotics|नारकोटिक्स|(police|पुलिस|cbi|customs|कस्टम)[^\n]{0,50}(video\s?call|वीडियो\s?कॉल)|(parcel|पार्सल)[^\n]{0,50}(drugs|ड्रग्स|customs|कस्टम)/i},
+  {id:"otp", w:3, re:/(otp|ओटीपी|cvv|upi\s?pin|atm\s?pin|पिन)[^\n]{0,50}(share|send|bata|tell|bhej|बताएं|बताइए|बताओ|भेजें|भेजो|शेयर|दें|दीजिए)|(share|send|bhejo|बताएं|भेजें|शेयर)[^\n]{0,40}(otp|ओटीपी|cvv)/i},
+  {id:"otp", w:1, re:/\botp\b|ओटीपी/i},
+  {id:"chain", w:3, re:/forward[^\n]{0,30}\b(5|7|10|11|15|20|21|ten|twenty)\b[^\n]{0,15}(people|persons|groups|contacts|friends|log)|\b(5|7|10|11|20|21|दस|बीस)\s?(लोगों|ग्रुप|ग्रुपों|व्यक्तियों)[^\n]{0,40}(भेज|फॉरवर्ड|शेयर)|forward\s?(this|it)?\s?(to\s)?(all|everyone|maximum)|सभी\s?(ग्रुप|ग्रुपों)?\s?(में|को)\s?(भेजें|फॉरवर्ड|शेयर)|ज़?्यादा\s?से\s?ज़?्यादा\s?(शेयर|फॉरवर्ड|भेजें)|आगे\s?(भेजें|फॉरवर्ड\s?करें)|share\s?(as\s?much|maximum)|forwarded\s?as\s?received|send\s?(this|it)\s?to\s?(all|every)\s?(your\s)?(contacts|groups|friends)|सभी\s?(संपर्कों|कॉन्टैक्ट्स)\s?को\s?भेज/i},
+  {id:"scheme", w:3, re:/free\s?recharge|फ्री\s?रिचार्ज|मुफ्त\s?रिचार्ज|मुफ़्त\s?रिचार्ज|free\s?(laptop|scooty|mobile|smartphone|data|internet|gas)|(modi|मोदी|pm|प्रधानमंत्री|govt|government|सरकार)[^\n]{0,70}(free|मुफ्त|मुफ़्त|फ्री|दे\s?रही|दे\s?रहे)[^\n]{0,40}(recharge|रिचार्ज|₹|rs|रुपये|laptop|लैपटॉप|फोन|mobile|gb|data)|(yojana|योजना)[^\n]{0,60}(link|लिंक|click|क्लिक|apply|आवेदन)/i},
+  {id:"apk", w:3, re:/\.apk\b|download\s?(this\s)?app[^\n]{0,30}(link|now)|एपीके/i},
+  {id:"link", w:2, re:/\b(bit\.ly|tinyurl\.com|t\.ly|cutt\.ly|is\.gd|rb\.gy|shorturl\.at|tiny\.cc|goo\.gl|ow\.ly|v\.gd|s\.id)\/|https?:\/\/\d{1,3}(\.\d{1,3}){3}|https?:\/\/[^\s]+\.(xyz|top|club|online|site|icu|buzz|live|click|info)\b/i},
+  {id:"urgent", w:1, re:/urgent|immediately|within\s?24\s?hours?|tonight|today\s?only|last\s?chance|hurry|act\s?now|turant|तुरंत|तुरन्त|फौरन|आज\s?रात|आज\s?ही|24\s?घंटे|जल्दी\s?करें|अंतिम\s?मौका/i},
+  {id:"click", w:1, re:/click\s?(here|on|the|below|this)|tap\s?(here|the\s?link)|क्लिक\s?करें|लिंक\s?पर\s?क्लिक|नीचे\s?दिए\s?लिंक/i},
+  {id:"money", w:2, re:/(processing|registration|tax|gst)\s?(fee|charge)|pay\s?(rs\.?|₹)\s?\d|(₹|rs\.?)\s?\d+[^\n]{0,30}(fee|शुल्क|जमा)|शुल्क\s?जमा|फीस\s?भेज|पैसे\s?भेज/i},
+  {id:"hoax", w:2, re:/unesco[^\n]{0,60}(declared|best|घोषित)|(nasa|नासा)[^\n]{0,60}(says|confirmed|warn|ने\s?कहा|पुष्टि)|(whatsapp|व्हाट्सएप|व्हाट्सऐप)[^\n]{0,50}(will\s?(be\s?)?(closed|paid|charged|charge|shut)|charg(e|es|ing)\s?(money|rs|₹|for)|बंद\s?हो|पैसे\s?(लगेंगे|लेगा|लेगी)|चार्ज)/i},
+  {id:"health", w:2, re:/(cure|ठीक|इलाज)[^\n]{0,40}(cancer|कैंसर|diabetes|शुगर|मधुमेह|corona|कोरोना|kidney|किडनी)[^\n]{0,60}(\d+\s?(days|din|दिन)|guaranteed|100%|चमत्कार|miracle|घरेलू)|doctors?\s?(hate|don'?t\s?want)|डॉक्टर\s?नहीं\s?चाहते/i},
+  /* Fear-mongering health / doomsday statistics, often attributed to WHO/UN/NASA. */
+  {id:"fearstat", w:3, re:/(\d{1,3}\s*(%|percent|per\s?cent| प्रतिशत|फीसदी))[^\n]{0,140}(cancer|कैंसर|heart\s?attack|हार्ट\s?अटैक|दिल\s?का\s?दौरा|\bdie\b|dying|deaths?|मरेंगे|मर\s?जा|मौत|\bhiv\b|\baids\b|stroke|पक्षाघात)[^\n]{0,80}(20[2-4]\d|\btak\b|\btk\b|तक|आबादी|जनसंख्या|population)|\b(cancer|कैंसर|heart\s?attack|हार्ट\s?अटैक|दिल\s?का\s?दौरा|\bhiv\b|\baids\b)[^\n]{0,140}(\d{1,3}\s*(%|percent|per\s?cent| प्रतिशत|फीसदी))[^\n]{0,80}(20[2-4]\d|\btak\b|\btk\b|तक|आबादी|जनसंख्या|population)/i},
+  {id:"fearstat", w:3, re:/\b(who|w\.h\.o\.?|world\s?health|unicef|\bun\b|united\s?nations|nasa|नासा|\brbi\b|आरबीआई)[^\n]{0,160}(\d{1,3}\s*(%|percent|प्रतिशत|फीसदी)|cancer|कैंसर|आबादी|population)[^\n]{0,100}(20[2-4]\d|\btak\b|\btk\b|तक|आबादी|जनसंख्या|population|cancer|कैंसर|percent|%|प्रतिशत)/i},
+  {id:"fearstat", w:3, re:/(आबादी|जनसंख्या|population)[^\n]{0,80}(कैंसर|cancer|हार्ट|heart\s?attack|मौत)[^\n]{0,60}(20[2-4]\d|\btak\b|\btk\b|तक|\d{1,3}\s*%|प्रतिशत)|(\d{1,3}\s*(%|percent|प्रतिशत|फीसदी))[^\n]{0,80}(आबादी|जनसंख्या|population)[^\n]{0,80}(कैंसर|cancer|हार्ट|heart|मौत|मर|20[2-4]\d|तक)/i}
+];
+
+
+function ruleCheck(text){
+  const t = (text||"").normalize("NFC");
+  const hits = new Map();
+  for(const r of RULES){ if(r.re.test(t)) hits.set(r.id, Math.max(hits.get(r.id)||0, r.w)); }
+  let score = 0; for(const w of hits.values()) score += w;
+  const ids = [...hits.entries()].sort((a,b)=>b[1]-a[1]).map(e=>e[0]);
+  return {score, ids};
+}
+/* Plain greetings / wishes with nothing to check. */
+const GREET = /(good\s?(morning|night|evening|afternoon)|\bg(m|n)\b|happy\s?(birthday|diwali|holi|new\s?year|anniversary|independence|republic|dussehra|navratri|eid|christmas|lohri|pongal|onam|bihu|raksha)|namaste|namaskar|jai\s?(shri|shree|sri)\s?(ram|krishna|ganesh)|radhe\s?radhe|ram\s?ram|have\s?a\s?(nice|blessed|great|good|wonderful)\s?(day|evening|weekend|sunday|monday)|congratulations?\s?(beta|on)|god\s?bless|thank\s?you|सुप्रभात|शुभ\s?(प्रभात|रात्रि|संध्या|दिवाली|दीपावली|होली|जन्मदिन|सोमवार|मंगलवार|बुधवार|गुरुवार|शुक्रवार|शनिवार|रविवार)|नमस्ते|नमस्कार|प्रणाम|जय\s?श्री|राधे\s?राधे|राम\s?राम|जन्मदिन\s?की|बधाई|धन्यवाद|शुक्रिया|ਸਤ\s?ਸ੍ਰੀ\s?ਅਕਾਲ|ਸ਼ੁਭ\s?ਸਵੇਰ|শুভ\s?(সকাল|রাত্রি|জন্মদিন)|নমস্কার|शुभ\s?सकाळ|வணக்கம்|காலை\s?வணக்கம்|శుభోదయం|నమస్కారం|સુપ્રભાત|નમસ્તે|ಶುಭೋದಯ|ನಮಸ್ಕಾರ)/i;
+function isGreeting(t){
+  t=(t||"").trim(); if(!t || t.length>220) return false;
+  if(/https?:|www\.|\d{5,}|₹|\brs\.?\s?\d|rupees?|रुपये|lakh|लाख|crore|करोड़/i.test(t)) return false;
+  return GREET.test(t);
+}
+
+/* ============================ STATE / UI ============================== */
+let lang = localStorage.getItem(LS_LANG); if(!LANGS[lang]) lang = "hi";
+let ocrText = "", filledFromOcr = "", imageData = null, lastResult = null, ocrJob = 0, ocrBusy = false;
+const $ = id => document.getElementById(id);
+const L = () => S[lang];
+function getKey(){ return (localStorage.getItem(LS_KEY)||"").trim() || BUILTIN_KEY || ""; }
+const hasKey = () => !!getKey();
+const hasOwnKey = () => !!(localStorage.getItem(LS_KEY)||"").trim();
+
+function applyLang(){
+  const s = L();
+  document.documentElement.lang = lang;
+  document.querySelectorAll('[id^="t_"]').forEach(el=>{ const k=el.id.slice(2); if(s[k]!=null) el.textContent=s[k]; });
+  $("msg").placeholder = s.placeholder;
+  $("gemKey").placeholder = BUILTIN_KEY ? (s.keyPhOverride||s.keyPh) : s.keyPh;
+  if(BUILTIN_KEY && s.setHelpBuiltin) $("t_setHelp").textContent = s.setHelpBuiltin;
+  document.title = "सच है? · Sach Hai? — " + s.sub;
+  $("langGrid").innerHTML = Object.entries(LANGS).map(([c,v])=>`<button type="button" data-l="${c}" class="${c===lang?"on":""}" lang="${c}">${v.name}</button>`).join("");
+  updateKeyStatus();
+  if(lastResult) renderResult(lastResult);
+}
+$("langBtn").onclick = () => $("langModal").classList.add("open");
+$("langModal").onclick = e => {
+  const b = e.target.closest("button[data-l]");
+  if(b){ lang=b.dataset.l; localStorage.setItem(LS_LANG,lang); stopSpeak(); applyLang(); }
+  if(b || e.target.id==="langModal") $("langModal").classList.remove("open");
+};
+
+/* ============================ IMAGE + OCR ============================= */
+function loadScript(src){
+  return new Promise((res,rej)=>{
+    if(window.Tesseract) return res();
+    const s=document.createElement("script"); s.src=src; s.async=true; s.onload=res; s.onerror=()=>rej(new Error("load"));
+    document.head.appendChild(s);
+  });
+}
+function setProgress(pct, text){
+  $("progress").style.display="block";
+  $("barFill").style.width = Math.round(Math.max(0,Math.min(1,pct))*100)+"%";
+  $("progressText").textContent = text;
+}
+let worker = null, workerLangs = "", onOcrProgress = ()=>{};
+function ocrLangs(){ return [...new Set(["eng","hin",LANGS[lang].ocr])].join("+"); }
+async function getWorker(){
+  const want = ocrLangs();
+  if(worker && workerLangs===want) return worker;
+  await loadScript(TESSERACT_CDN);
+  if(worker){ try{ await worker.terminate(); }catch(e){} worker=null; }
+  worker = await Tesseract.createWorker(want.split("+"), 1, {logger: m => onOcrProgress(m)}); // one reusable worker
+  workerLangs = want; return worker;
+}
+async function decodeImage(file){
+  try{ return await createImageBitmap(file, {imageOrientation:"from-image"}); }catch(e){}
+  return await new Promise((res,rej)=>{ const i=new Image(); i.onload=()=>res(i); i.onerror=()=>rej(new Error("decode")); i.src=URL.createObjectURL(file); });
+}
+/* Fit the long side into [minSide, maxSide]: big phone screenshots get smaller (fast), tiny images get bigger (readable). */
+function toCanvas(img, maxSide, minSide){
+  const w=img.width, h=img.height, long=Math.max(w,h);
+  let k = Math.min(1, maxSide/long); if(long*k < minSide) k = Math.min(3, minSide/long);
+  const c=document.createElement("canvas"); c.width=Math.max(1,Math.round(w*k)); c.height=Math.max(1,Math.round(h*k));
+  const x=c.getContext("2d"); x.fillStyle="#fff"; x.fillRect(0,0,c.width,c.height); x.drawImage(img,0,0,c.width,c.height);
+  return c;
+}
+function fileToB64(file){ return new Promise(res=>{ const fr=new FileReader(); fr.onload=()=>{const s=String(fr.result); res(s.slice(s.indexOf(",")+1));}; fr.readAsDataURL(file); }); }
+const GEMINI_IMG_TYPES = /^image\/(jpeg|png|webp|heic|heif)$/;
+
+async function handleImage(file){
+  const job = ++ocrJob;
+  stopSpeak(); lastResult=null; $("result").style.display="none"; $("checkStatus").textContent="";
+  if($("msg").value.trim() === filledFromOcr) $("msg").value = "";   // a new photo replaces text read from the old one
+  ocrText=""; filledFromOcr=""; imageData=null;
+  const img=$("preview"); img.src=URL.createObjectURL(file); img.style.display="block";
+  ocrBusy = true; $("checkBtn").disabled = true;
+  setProgress(0.02, L().ocrLoad);
+  try{
+    let bmp;
+    try{ bmp = await decodeImage(file); }
+    catch(e){ // e.g. HEIC on Chrome: can't read words here, but Gemini can look at the original
+      if(GEMINI_IMG_TYPES.test(file.type||"") && file.size < 15e6) imageData = {mime:file.type, b64: await fileToB64(file)};
+      if(job===ocrJob) setProgress(0, imageData && hasKey() ? L().heicAI : L().heicNoAI);
+      return;
+    }
+    const send = toCanvas(bmp, 1536, 0);                       // what Gemini sees: ≤1536 px JPEG
+    imageData = {mime:"image/jpeg", b64: send.toDataURL("image/jpeg", 0.85).split(",")[1]};
+    const ocrCanvas = toCanvas(bmp, 2000, 1400);              // what OCR reads
+    onOcrProgress = m => {
+      if(job!==ocrJob) return;
+      if(m.status==="recognizing text") setProgress(0.3+0.7*m.progress, L().ocrRead+" "+Math.round(m.progress*100)+"%");
+      else if(typeof m.progress==="number") setProgress(0.05+0.25*m.progress, L().ocrLoad);
+    };
+    const w = await getWorker();
+    if(job!==ocrJob) return;
+    const {data} = await w.recognize(ocrCanvas);
+    if(job!==ocrJob) return;                                   // a newer photo was chosen meanwhile
+    const text = (data.text||"").replace(/[ \t]+\n/g,"\n").replace(/\n{3,}/g,"\n\n").trim();
+    const letters = (text.match(/\p{L}/gu)||[]).length;
+    if(letters < 8 || (data.confidence||0) < 40){              // nothing readable / junk
+      setProgress(1, hasKey() ? L().ocrNoTextAI : L().ocrNoTextNoAI);
+    }else{
+      ocrText = text; setProgress(1, L().ocrDone);
+      if(!$("msg").value.trim()){ $("msg").value = text; filledFromOcr = text; }
+    }
+  }catch(e){
+    if(job===ocrJob) setProgress(0, imageData && hasKey() ? L().ocrNoTextAI : L().ocrFail);
+  }finally{
+    if(job===ocrJob){ ocrBusy=false; $("checkBtn").disabled=false; }
+  }
+}
+$("file").addEventListener("change", e=>{ const f=e.target.files && e.target.files[0]; if(f) handleImage(f); e.target.value=""; });
+
+/* ============================ GEMINI ================================== */
+function aiErr(code,msg){ const e=new Error(msg||code); e.code=code; return e; }
+function geminiUrl(model){ return `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`; }
+function parseGemini(j, model){
+  const txt = (((j.candidates||[])[0]||{}).content||{}).parts?.filter(p=>!p.thought).map(p=>p.text||"").join("") || "";
+  const o = JSON.parse(txt.replace(/^\s*```(json)?/,"").replace(/```\s*$/,"").trim());
+  o.model = j.modelVersion || model;
+  return o;
+}
+function throwGeminiHttp(r, t){
+  if((r.status===400 && /api key/i.test(t)) || r.status===401 || r.status===403){ const e=aiErr("aiKey"); e.fatal=true; throw e; }
+  throw aiErr(r.status===429 ? "aiRate" : r.status>=500 ? "aiBusy" : "aiErr");
+}
+function isLiteModel(name){ return /lite/i.test(String(name||"")); }
+function nextStronger(model){
+  const name = String(model||"");
+  const i = GEMINI_MODELS.findIndex(m => name===m || name.startsWith(m));
+  for(let j=(i<0?0:i+1); j<GEMINI_MODELS.length; j++) if(!isLiteModel(GEMINI_MODELS[j])) return GEMINI_MODELS[j];
+  return null;
+}
+/* Single-model call, used for a one-step escalate after Flash-Lite says "unsure". */
+function callGeminiOne(body, model){
+  const key = getKey(), ctl=new AbortController(), kill=setTimeout(()=>ctl.abort(), MODEL_TIMEOUT_MS);
+  return fetch(geminiUrl(model), {method:"POST", headers:{"Content-Type":"application/json","x-goog-api-key":key}, body, signal:ctl.signal})
+    .then(async r=>{
+      if(!r.ok){ throwGeminiHttp(r, await r.text().catch(()=> "")); }
+      const o = parseGemini(await r.json(), model);
+      localStorage.setItem(LS_MODEL, model);
+      return o;
+    })
+    .finally(()=>clearTimeout(kill));
+}
+/* If a lite model came back "unsure", ask the next stronger model once. Keep the first answer on quota/outage. */
+async function maybeEscalate(body, o){
+  if(!o || o.verdict!=="unsure") return o;
+  const next = nextStronger(o.model);
+  if(!next) return o;
+  try{
+    const o2 = await callGeminiOne(body, next);
+    if(o2 && o2.verdict){ o2.escalatedFrom = o.model; return o2; }
+  }catch(e){ if(e && e.fatal) throw e; }
+  return o;
+}
+/* Hedged race: start the most reliable model; if it hasn't answered in HEDGE_MS (or fails), start the next one too.
+   First good answer wins, the rest are cancelled. */
+function callGemini(body){
+  const key = getKey();
+  const sticky = localStorage.getItem(LS_MODEL);
+  const order = sticky && GEMINI_MODELS.includes(sticky) ? [sticky, ...GEMINI_MODELS.filter(m=>m!==sticky)] : GEMINI_MODELS.slice();
+  return new Promise((resolve,reject)=>{
+    let next=0, active=0, done=false, lastErr=null; const ctrls=[];
+    const finish = (err,val) => { if(done) return; done=true; ctrls.forEach(c=>c.abort()); err?reject(err):resolve(val); };
+    const launch = () => {
+      if(done) return;
+      if(next>=order.length){ if(!active) finish(lastErr||aiErr("aiErr")); return; }
+      const model=order[next++], ctl=new AbortController(); ctrls.push(ctl); active++;
+      const hedge=setTimeout(launch, HEDGE_MS), kill=setTimeout(()=>ctl.abort(), MODEL_TIMEOUT_MS);
+      fetch(geminiUrl(model),
+        {method:"POST", headers:{"Content-Type":"application/json","x-goog-api-key":key}, body, signal:ctl.signal})
+      .then(async r=>{
+        if(!r.ok){ throwGeminiHttp(r, await r.text().catch(()=> "")); }
+        const o = parseGemini(await r.json(), model);
+        localStorage.setItem(LS_MODEL, model);
+        finish(null, o);
+      })
+      .catch(e=>{
+        if(done) return;
+        if(e && e.fatal) return finish(e);
+        if(!lastErr || lastErr.code!=="aiRate") lastErr = e && e.code ? e : aiErr(e && e.name==="AbortError" ? "aiBusy" : "aiErr");
+      })
+      .finally(()=>{ clearTimeout(kill); active--; if(!done){ clearTimeout(hedge); launch(); } });
+    };
+    launch();
+  });
+}
+const VERDICTS = ["real","fake","unsure","no_claim"];
+function schema(extra){
+  const p = {verdict:{type:"STRING",enum:VERDICTS}, reason_en:{type:"STRING"}, reason_hi:{type:"STRING"}, reason_local:{type:"STRING"}};
+  Object.assign(p, extra||{});
+  return {type:"OBJECT", properties:p, required:["verdict","reason_en","reason_hi","reason_local"]};
+}
+function common(langName){ return `Today's date is ${new Date().toISOString().slice(0,10)}.
+Never give medical or legal advice; for health claims say to ask a doctor, and never call a remedy safe or effective. Never invent sources, URLs, dates or numbers. Never say that fact-checkers or officials confirmed or denied something unless such an article is given to you below. Do not repeat phone numbers or links from the message.
+Write reasons for an elderly reader: 1-2 short, simple, polite sentences that say WHY. reason_en: simple English. reason_hi: simple Hindi (Devanagari). reason_local: simple ${langName} (if ${langName} is English or Hindi, repeat that text).`; }
+const VERDICT_RULES = `Choose exactly one verdict. Be decisive: elderly readers need a clear yes or no, not "maybe". Use your world knowledge confidently.
+- "no_claim": greetings, wishes, prayers, jokes, quotes, personal or family chat, or anything with no news claim, offer or request worth checking.
+- "fake": a scam (KYC/bank account block, lottery/KBC prize, electricity cut tonight, digital arrest/CBI/police video call, OTP/PIN request, fake job or government scheme, phishing link or app) OR the main claim is false, misleading, edited, AI-made, or old news recycled as new OR the claim is implausible, sensational, or contradicts well-established facts OR it is a fear-mongering health or doomsday statistic OR it falsely attributes something to WHO, RBI, the government, NASA, the UN, or a similar official body OR it is an "X% of people will get Y disease by year" style prediction, viral "breaking" panic, or a miracle cure. If an extraordinary claim has no solid evidence, treat it as fake — missing evidence is not a reason for "unsure".
+- "real": ONLY for well-established facts you are highly confident are true (widely known geography, settled history, or a clearly confirmed official fact).
+- "unsure": ONLY when the claim is genuinely plausible but cannot be verified — for example a specific local event, a very recent incident, or a narrow claim you cannot confirm or deny. Do not use "unsure" for sensational statistics, official-sounding health or doomsday warnings, or shocking "WHO/RBI/NASA/the government said" claims.`;
+function partsFor(prompt){
+  const parts=[{text:prompt}];
+  if(imageData) parts.push({inline_data:{mime_type:imageData.mime, data:imageData.b64}});
+  return parts;
+}
+function msgBlock(text, fromOcr){
+  let note = "";
+  if(imageData && !text) note = "The message is the attached image (no readable text). Judge the image itself.\n";
+  else if(imageData && fromOcr) note = "The text below was read from the attached image by OCR and may contain mistakes; if they differ, trust the image.\n";
+  else if(imageData) note = "An image was also attached; consider it together with the text.\n";
+  return note + 'Message:\n"""' + (text||"(no text)").slice(0,4000) + '"""';
+}
+async function aiCheck(text, fromOcr){
+  const langName = LANGS[lang].ai;
+  const prompt = `You are a decisive fact-checking helper for elderly people in India who receive WhatsApp forwards. Prefer a clear fake or real over an uncertain maybe. ${common(langName)}
+${VERDICT_RULES}
+Also give "search_queries": exactly 2 English keyword searches that would find a fact-check article about the main claim: the first 3-4 distinctive words (e.g. "new 1000 rupee note"), the second only the 2 most distinctive words (e.g. "1000 note"). No words like "fact check", "fake", "viral", "news". Empty list for no_claim or obvious scams.
+Reply ONLY with the JSON object.
+${msgBlock(text, fromOcr)}`;
+  const body = JSON.stringify({contents:[{role:"user",parts:partsFor(prompt)}],
+    generationConfig:{temperature:0.1, responseMimeType:"application/json",
+      responseSchema: schema({search_queries:{type:"ARRAY",items:{type:"STRING"}}})}});
+  return maybeEscalate(body, await callGemini(body));
+}
+async function aiRecheck(text, fromOcr, arts){
+  const langName = LANGS[lang].ai;
+  const list = arts.map((a,i)=>`[${i+1}] ${a.title} — ${a.site}, ${a.date}. ${a.excerpt}`).join("\n");
+  const prompt = `You are a decisive fact-checking helper for elderly people in India who receive WhatsApp forwards. Prefer a clear fake or real over an uncertain maybe. ${common(langName)}
+We searched Indian fact-check websites and found these articles (number, title, site, date, excerpt):
+${list}
+First decide which articles check this EXACT claim (same event, same object, same numbers) and list their numbers in "relevant". Be strict: an article that checks a DIFFERENT claim on a similar topic (for example a different banknote, an old video about the same mission, a different scheme) is NOT relevant. If none match, return an empty list.
+Then judge the message. Use "fake" if a relevant article shows the claim is false, misleading or fabricated; "real" only if a relevant article clearly confirms it. If no article is relevant, judge as you normally would.
+${VERDICT_RULES}
+Only if "relevant" is not empty, say in the reasons what those fact-checkers found. Never claim that fact-checkers confirmed or denied anything unless a relevant article says so. Reply ONLY with the JSON object.
+${msgBlock(text, fromOcr)}`;
+  const body = JSON.stringify({contents:[{role:"user",parts:partsFor(prompt)}],
+    generationConfig:{temperature:0.1, responseMimeType:"application/json",
+      responseSchema: schema({relevant:{type:"ARRAY",items:{type:"INTEGER"}}})}});
+  return maybeEscalate(body, await callGemini(body));
+}
+
+/* ============================ FACT-CHECK SEARCH ======================= */
+function decodeHtml(s){ const d=document.createElement("textarea"); d.innerHTML=String(s||"").replace(/<[^>]+>/g," "); return d.value.replace(/\s+/g," ").trim(); }
+const STOP = new Set("the a an of in on to for and or is are was were be by with from this that it its as at new news viral claim claims fake true india indian government govt says said video photo image message whatsapp".split(" "));
+const words = s => (s.toLowerCase().match(/[\p{L}\p{N}]+/gu)||[]).filter(w=>w.length>=3 && !STOP.has(w));
+async function searchFactChecks(queries){
+  const jobs=[];
+  for(const q of queries.slice(0,2)) for(const site of FACTCHECK_SITES){
+    const ctl=new AbortController(); const t=setTimeout(()=>ctl.abort(), 5000);
+    jobs.push(fetch(`https://${site}/wp-json/wp/v2/posts?search=${encodeURIComponent(q)}&per_page=4&_fields=title,link,date,excerpt`,{signal:ctl.signal})
+      .then(r=>r.ok?r.json():[]).then(list=>(Array.isArray(list)?list:[]).map(p=>({q, site:site.replace(/^www\./,""), title:decodeHtml(p.title&&p.title.rendered),
+        link:p.link, date:String(p.date||"").slice(0,10), excerpt:decodeHtml(p.excerpt&&p.excerpt.rendered).slice(0,220)})))
+      .catch(()=>[]).finally(()=>clearTimeout(t)));
+  }
+  const all=(await Promise.all(jobs)).flat().filter(a=>/^https:\/\//.test(a.link||"") && a.title);
+  const seen=new Set(), out=[];
+  for(const a of all){
+    if(seen.has(a.link)) continue; seen.add(a.link);
+    const qw=[...new Set(words(a.q))], tw=new Set(words(a.title+" "+a.excerpt));
+    const hit=qw.filter(w=>tw.has(w)).length;
+    a.score = qw.length ? hit/qw.length : 0;
+    if(hit>=2 && a.score>=0.5) out.push(a);
+  }
+  return out.sort((x,y)=>y.score-x.score || (y.date>x.date?1:-1)).slice(0,6);
+}
+async function googleFactCheck(text){
+  if(!FACTCHECK_API_KEY) return [];
+  const q=text.replace(/https?:\/\/\S+/g," ").replace(/\s+/g," ").trim().slice(0,200); if(q.length<8) return [];
+  const r=await fetch("https://factchecktools.googleapis.com/v1alpha1/claims:search?pageSize=5&query="+encodeURIComponent(q)+"&key="+encodeURIComponent(FACTCHECK_API_KEY));
+  if(!r.ok) return []; const j=await r.json(); const out=[];
+  for(const c of (j.claims||[])) for(const rv of (c.claimReview||[]))
+    out.push({title:(rv.title||c.text||"")+" — "+(rv.textualRating||""), site:(rv.publisher&&(rv.publisher.site||rv.publisher.name))||"", link:rv.url, date:(rv.reviewDate||"").slice(0,10), excerpt:""});
+  return out.filter(a=>/^https?:/.test(a.link||"")).slice(0,3);
+}
+
+/* ============================ PIPELINE ================================ */
+function status(t){ $("checkStatus").textContent = t||""; }
+async function check(){
+  stopSpeak();
+  if(ocrBusy) return;
+  const text = $("msg").value.trim();
+  if(!text && !imageData){ alert(L().empty); $("msg").focus(); return; }
+  const fromOcr = !!text && text === filledFromOcr;
+  const btn=$("checkBtn"); btn.disabled=true; status(L().checking);
+  const res = {lang, rules:ruleCheck(text), greet:isGreeting(text), noText:!text, ai:null, sources:[], errors:[], t0:performance.now()};
+  try{
+    if(res.rules.score < 3 && !res.greet && hasKey()){   // greetings need no AI call
+      try{
+        res.ai = await aiCheck(text, fromOcr);
+        const qs = (res.ai.search_queries||[]).filter(q=>q && q.trim().length>3);
+        // Fact-check sites mostly publish debunks, so only search when the first answer is "unsure" or "fake".
+        if((res.ai.verdict==="unsure" || res.ai.verdict==="fake") && qs.length){
+          status(L().searching);
+          const arts = (await googleFactCheck(text).catch(()=>[])).concat(await searchFactChecks(qs));
+          res.trace = {found:arts.length};
+          if(arts.length){
+            status(L().checking);
+            try{
+              const r2 = await aiRecheck(text, fromOcr, arts);
+              const rel = [...new Set(r2.relevant||[])].map(n=>arts[n-1]).filter(Boolean);
+              res.trace = {found:arts.length, relevant:rel.length, second:r2.verdict};
+              res.sources = rel.slice(0,3);                     // show only articles about this exact claim
+              // unsure → may become fake/real/unsure with evidence; fake → can only stay fake (gains sourced reasons)
+              if(rel.length && (res.ai.verdict==="unsure" || r2.verdict==="fake")) res.ai = Object.assign(r2, {checkedSources:true});
+              else if(res.ai.verdict==="fake" && r2.verdict!=="fake") res.sources = [];
+            }catch(e){ res.trace = {found:arts.length, secondError:e.code||String(e)}; }
+          }
+        }
+      }catch(e){ res.errors.push(e.code||"aiErr"); }
+    }else if(res.rules.score < 3 && FACTCHECK_API_KEY && text){
+      res.sources = await googleFactCheck(text).catch(()=>[]);
+    }
+  }finally{
+    res.ms = Math.round(performance.now()-res.t0);
+    res.verdict = decide(res);
+    lastResult = res; renderResult(res);
+    btn.disabled=false; status("");
+    $("result").scrollIntoView({behavior:"smooth",block:"start"});
+  }
+}
+function decide(res){
+  const sc=res.rules.score, ai=res.ai;
+  if(sc>=3) return "fake";
+  if(ai){
+    if(ai.verdict==="fake") return "fake";
+    if(ai.verdict==="real" && sc===0) return "real";
+    if(ai.verdict==="no_claim" && sc===0) return "none";
+    return "unsure";
+  }
+  if(res.greet && sc===0) return "none";
+  return "unsure";
+}
+
+const TIPLINES = [["BOOM","+91 77009 06588"],["Factly","+91 92470 52470"],["Vishvas News","+91 92052 70923"],
+  ["The Quint WebQoof","+91 95405 11818"],["PIB Fact Check","+91 87997 11259",true]];
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+function aiReason(res){
+  const a=res.ai; if(!a) return "";
+  if(lang==="en") return a.reason_en; if(lang==="hi") return a.reason_hi||a.reason_en;
+  return (res.lang===lang && a.reason_local) ? a.reason_local : a.reason_en;
+}
+function reasonLines(res){
+  const s=L(), lines=[];
+  for(const id of res.rules.ids.slice(0,2)) lines.push(s["r_"+id]);
+  const r=aiReason(res); if(r) lines.push(s.aiSays+": "+r);
+  if(!lines.length) lines.push(res.verdict==="none" ? s.greetReason : (res.noText ? s.noTextReason : s.noSigns));
+  for(const e of res.errors) lines.push(s[e]||s.aiErr);
+  return lines.slice(0,3);
+}
+const ICON = {fake:"❌", real:"✅", unsure:"⚠️", none:"💬"};
+function renderResult(res){
+  const s=L(), v=res.verdict, box=$("result");
+  box.className=v; box.style.display="block";
+  $("vIcon").textContent = ICON[v]; $("vText").textContent = s[v];
+  $("reasons").innerHTML = reasonLines(res).map(l=>"<li>"+esc(l)+"</li>").join("");
+  $("sources").innerHTML = res.sources.length ? "<strong>"+esc(s.srcTitle)+"</strong>"+res.sources.map(a=>
+    `<a href="${esc(a.link)}" target="_blank" rel="noopener noreferrer">🔗 ${esc(a.title)} <span style="font-weight:400">(${esc(a.site)}${a.date?", "+esc(a.date):""})</span></a>`).join("") : "";
+  $("tiplines").hidden = v!=="unsure";
+  $("tipList").innerHTML = TIPLINES.map(([n,num,pib])=>`<li>${esc(n)}${pib?" ("+esc(s.pibNote)+")":""}: <a href="https://wa.me/${num.replace(/\D/g,"")}" target="_blank" rel="noopener noreferrer">${esc(num)}</a></li>`).join("");
+  $("waBtn").hidden = v==="none";
+  $("t_wa").textContent=s.wa; $("t_speak").textContent=speaking?s.stop:s.speak; $("voiceNote").hidden=true;
+}
+
+/* ============================ SHARE / SPEAK =========================== */
+function pageLink(){ return /^https?:/.test(location.href) ? location.href.split(/[?#]/)[0] : ""; }
+$("waBtn").onclick = () => {
+  if(!lastResult) return; const s=L(), v=lastResult.verdict;
+  const head = v==="fake"?s.waFake : v==="real"?s.waReal : s.waUnsure;
+  const src = lastResult.sources[0] ? "\n🔗 "+lastResult.sources[0].link : "";
+  const msg = `${head}\n${ICON[v]} ${s[v]}\n• ${reasonLines(lastResult)[0]}${src}\n\n${s.waEnd} ${pageLink()}`.trim();
+  window.open("https://wa.me/?text="+encodeURIComponent(msg), "_blank", "noopener");
+};
+let speaking=false;
+function stopSpeak(){ if("speechSynthesis" in window) speechSynthesis.cancel(); speaking=false; if(lastResult) $("t_speak").textContent=L().speak; }
+$("speakBtn").onclick = () => {
+  if(!("speechSynthesis" in window) || !lastResult) return;
+  if(speaking){ stopSpeak(); return; }
+  const s=L(), code=LANGS[lang].tts, vs=speechSynthesis.getVoices();
+  const voice = vs.find(x=>x.lang.replace("_","-")===code) || vs.find(x=>x.lang.toLowerCase().startsWith(lang));
+  if(vs.length && !voice && lang!=="en" && lang!=="hi"){ $("voiceNote").textContent=s.noVoice; $("voiceNote").hidden=false; return; }
+  const u=new SpeechSynthesisUtterance(s[lastResult.verdict]+". "+reasonLines(lastResult).join(". "));
+  u.lang=code; u.rate=0.9; if(voice) u.voice=voice;
+  u.onend=u.onerror=()=>{speaking=false; $("t_speak").textContent=L().speak;};
+  speechSynthesis.speak(u); speaking=true; $("t_speak").textContent=s.stop;
+};
+$("clearBtn").onclick = () => {
+  stopSpeak(); ocrJob++; ocrBusy=false; $("checkBtn").disabled=false;
+  $("msg").value=""; ocrText=""; filledFromOcr=""; imageData=null; lastResult=null;
+  $("preview").style.display="none"; $("progress").style.display="none"; $("result").style.display="none"; status("");
+  window.scrollTo({top:0,behavior:"smooth"}); $("msg").focus();
+};
+$("checkBtn").onclick = check;
+
+/* ============================ SETTINGS ================================ */
+function updateKeyStatus(){
+  const s=L();
+  $("keyStatus").textContent = hasOwnKey() ? s.keySaved : (BUILTIN_KEY ? s.keyBuiltin : s.keyNone);
+}
+function drawer(open){ $("drawer").classList.toggle("open",open); $("shade").classList.toggle("open",open); $("drawer").setAttribute("aria-hidden",String(!open)); if(open){ $("gemKey").value=localStorage.getItem(LS_KEY)||""; $("gemKey").focus(); } }
+$("settingsBtn").onclick=()=>drawer(true); $("closeDrawer").onclick=$("shade").onclick=()=>drawer(false);
+$("saveKey").onclick=()=>{ const k=$("gemKey").value.trim(); if(k) localStorage.setItem(LS_KEY,k); else localStorage.removeItem(LS_KEY); updateKeyStatus(); }; // any key format is accepted
+$("clearKey").onclick=()=>{ localStorage.removeItem(LS_KEY); $("gemKey").value=""; updateKeyStatus(); };
+
+/* Prefill from ?text= (for a future share-target manifest or a shared link) */
+(function(){ const p=new URLSearchParams(location.search); const t=[p.get("title"),p.get("text"),p.get("url")].filter(Boolean).join("\n"); if(t) $("msg").value=t; })();
+window.SachHai = {ruleCheck, decide, isGreeting, searchFactChecks, hasKey, hasOwnKey, getKey, aiCheck, nextStronger, isLiteModel}; // for testing
+applyLang();
+
+</script>
+</body>
+</html>
