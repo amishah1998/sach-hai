@@ -183,5 +183,35 @@
   "id": "ai-news",
   "expect": "notFake",
   "text": "Google launches a new AI model for Indian languages."
+ },
+ {
+  "id": "milk-who-87pct-ocr",
+  "expect": "fake",
+  "text": "चौंकाने वाली खबर!\nदूध नहीं जहर पीता है इंडिया,\nउत्पादन 14 करोड़ लीटर\nलेकिन खपत 64 करोड़ लीटर\nWHO की चेतावनी - बंद नहीं हुई मिलावट\nतो 87% भारतीयों को\n2035 तक होगा कैंसर\nदूध में मिलावट सैहत के लिए जानलेवा\n2035 तक कैंसर का खतरा 87% तक\nलाखों परिवारों की सेहत पर मंडरा रहा खतरा\nनई दिल्ली एनिमल वेलफेयर बोर्ड के सदस्य मोहन सिंह अहलूवालिया के मुताबिक, देश में बिकने वाला 68.7 फीसद दूध और दूध से बना प्रोडक्ट मिलावटी है। यह फूड सेफ्टी एंड स्टैंडर्ड अथॉरिटी ऑफ इंडिया (FSSAI) की ओर से तय मानकों से कहीं भी मेल नहीं खाता है।\nजागो इंडिया! अपनी और अपने परिवार की सेहत बचाओ\nLIKE COMMENT SHARE\n#MilkAdulteration #HealthAlert #SayNoToAdulteration #HealthyIndia"
+ },
+ {
+  "id": "stat-icmr-rise",
+  "expect": "notFake",
+  "text": "Cancer cases in India expected to rise 57% by 2040, says ICMR report."
+ },
+ {
+  "id": "stat-ncd-deaths",
+  "expect": "notFake",
+  "text": "63% of deaths in India are due to non-communicable diseases like heart disease and diabetes, WHO data shows."
+ },
+ {
+  "id": "stat-tobacco",
+  "expect": "notFake",
+  "text": "WHO: tobacco kills more than 8 million people every year worldwide."
+ },
+ {
+  "id": "rwa-power-contact",
+  "expect": "notFake",
+  "text": "RWA Notice\nPower cut tomorrow 10am to 2pm in Block C for transformer work.\nFor queries call the RWA office 9811122233"
+ },
+ {
+  "id": "rwa-power-hi",
+  "expect": "notFake",
+  "text": "सूचना: कल सुबह 10 से 2 बजे तक मरम्मत के कारण बिजली बंद रहेगी। अधिक जानकारी के लिए 9811122233 पर संपर्क करें।"
  }
 ]
