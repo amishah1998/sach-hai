@@ -454,7 +454,7 @@ function callGemini(body){
       .catch(e=>{
         if(done) return;
         if(e && e.fatal) return finish(e);
-        if(!lastErr || lastErr.code!=="aiRate") lastErr = e && e.code ? e : aiErr(e && e.name==="AbortError" ? "aiBusy" : "aiErr");
+        if(!lastErr || lastErr.code!=="aiRate") lastErr = e && typeof e.code==="string" ? e : aiErr(e && e.name==="AbortError" ? "aiBusy" : "aiErr");
       })
       .finally(()=>{ clearTimeout(kill); active--; if(!done){ clearTimeout(hedge); launch(); } });
     };
@@ -583,7 +583,7 @@ async function check(){
             }catch(e){ res.trace = {found:arts.length, secondError:e.code||String(e)}; }
           }
         }
-      }catch(e){ res.errors.push(e.code||"aiErr"); }
+      }catch(e){ res.errors.push(typeof e.code==="string" ? e.code : e && e.name==="AbortError" ? "aiBusy" : "aiErr"); }
     }else if(res.rules.score < 3 && FACTCHECK_API_KEY && text){
       res.sources = await googleFactCheck(text).catch(()=>[]);
     }
